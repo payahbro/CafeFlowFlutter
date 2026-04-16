@@ -1,3 +1,4 @@
+import 'package:cafe/features/product/data/config/product_pricing_overrides.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -41,9 +42,10 @@ class ProductModel {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      price: json['price'] is int
-          ? json['price'] as int
-          : int.tryParse('${json['price']}') ?? 0,
+      price: ProductPricingOverrides.forcedPrice ??
+          (json['price'] is int
+              ? json['price'] as int
+              : int.tryParse('${json['price']}') ?? 0),
       category: ProductCategoryX.fromValue(json['category'] as String? ?? 'snack'),
       status: ProductStatusX.fromValue(json['status'] as String? ?? 'available'),
       imageUrl: json['image_url'] as String? ?? '',

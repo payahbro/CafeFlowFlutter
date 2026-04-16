@@ -26,7 +26,7 @@ class ProductOptionSelector extends StatelessWidget {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 32,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF26211F),
           ),
@@ -38,23 +38,39 @@ class ProductOptionSelector extends StatelessWidget {
           children: options.map((option) {
             final isActive = option == selected;
             return ChoiceChip(
-              label: Text(option.replaceAll('_', ' ')),
+              label: Text(_formatOptionLabel(option)),
               selected: isActive,
               onSelected: (_) => onChanged(option),
               selectedColor: const Color(0x1AD88A16),
               labelStyle: TextStyle(
-                color: isActive ? const Color(0xFFD88A16) : const Color(0xFF7B716E),
+                color: isActive
+                    ? const Color(0xFFD88A16)
+                    : const Color(0xFF7B716E),
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
               side: BorderSide(
-                color: isActive ? const Color(0xFFD88A16) : const Color(0xFFCAC3C0),
+                color: isActive
+                    ? const Color(0xFFD88A16)
+                    : const Color(0xFFCAC3C0),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             );
           }).toList(),
         ),
       ],
     );
   }
-}
 
+  String _formatOptionLabel(String value) {
+    final words = value.split('_').where((word) => word.isNotEmpty);
+    return words
+        .map(
+          (word) =>
+              '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+}

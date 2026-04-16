@@ -53,6 +53,12 @@ class ProductDetailController extends ChangeNotifier {
 
   void selectTemperature(String value) {
     selectedTemperature = value;
+    final hasIceOptions = _product?.attributes.iceLevels.isNotEmpty ?? false;
+    if (value != 'iced') {
+      selectedIceLevel = null;
+    } else if (selectedIceLevel == null && hasIceOptions) {
+      selectedIceLevel = _product!.attributes.iceLevels.first;
+    }
     notifyListeners();
   }
 
@@ -86,7 +92,8 @@ class ProductDetailController extends ChangeNotifier {
       if (selectedTemperature != null) 'temperature': selectedTemperature!,
       if (selectedSize != null) 'sizes': selectedSize!,
       if (selectedSugarLevel != null) 'sugar_levels': selectedSugarLevel!,
-      if (selectedIceLevel != null) 'ice_levels': selectedIceLevel!,
+      if (selectedTemperature == 'iced' && selectedIceLevel != null)
+        'ice_levels': selectedIceLevel!,
       if (selectedPortion != null) 'portions': selectedPortion!,
       if (selectedSpicyLevel != null) 'spicy_levels': selectedSpicyLevel!,
     };
@@ -96,17 +103,22 @@ class ProductDetailController extends ChangeNotifier {
     final attributes = _product?.attributes;
     if (attributes == null) return;
 
-    selectedTemperature =
-        attributes.temperature.isNotEmpty ? attributes.temperature.first : null;
+    selectedTemperature = attributes.temperature.isNotEmpty
+        ? attributes.temperature.first
+        : null;
     selectedSize = attributes.sizes.isNotEmpty ? attributes.sizes.first : null;
-    selectedSugarLevel =
-        attributes.sugarLevels.isNotEmpty ? attributes.sugarLevels.first : null;
+    selectedSugarLevel = attributes.sugarLevels.isNotEmpty
+        ? attributes.sugarLevels.first
+        : null;
     selectedIceLevel =
-        attributes.iceLevels.isNotEmpty ? attributes.iceLevels.first : null;
-    selectedPortion =
-        attributes.portions.isNotEmpty ? attributes.portions.first : null;
-    selectedSpicyLevel =
-        attributes.spicyLevels.isNotEmpty ? attributes.spicyLevels.first : null;
+        (selectedTemperature == 'iced' && attributes.iceLevels.isNotEmpty)
+        ? attributes.iceLevels.first
+        : null;
+    selectedPortion = attributes.portions.isNotEmpty
+        ? attributes.portions.first
+        : null;
+    selectedSpicyLevel = attributes.spicyLevels.isNotEmpty
+        ? attributes.spicyLevels.first
+        : null;
   }
 }
-

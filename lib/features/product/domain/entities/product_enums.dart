@@ -25,7 +25,7 @@ extension ProductCategoryX on ProductCategory {
       case ProductCategory.food:
         return 'Makanan';
       case ProductCategory.snack:
-        return 'Snak';
+        return 'Snack';
     }
   }
 
@@ -103,4 +103,3 @@ extension SortDirectionX on SortDirection {
     }
   }
 }
-

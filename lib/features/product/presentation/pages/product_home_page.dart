@@ -84,10 +84,22 @@ class _ProductHomePageState extends State<ProductHomePage> {
         selectedItemColor: const Color(0xFFD88A16),
         unselectedItemColor: const Color(0xFF231815),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Order'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart_outlined), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            label: 'Order',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart_outlined),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -106,7 +118,9 @@ class _ProductHomePageState extends State<ProductHomePage> {
             child: TextButton(
               onPressed: () {
                 setState(() {
-                  _featuredFuture = widget.getProductsUseCase(const ProductQuery(limit: 8));
+                  _featuredFuture = widget.getProductsUseCase(
+                    const ProductQuery(limit: 8),
+                  );
                 });
               },
               child: const Text('Gagal memuat produk. Tap untuk coba lagi'),
@@ -144,24 +158,27 @@ class _ProductHomePageState extends State<ProductHomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                      child: Image.network(
-                        product.imageUrl,
-                        height: 110,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          height: 110,
-                          color: const Color(0xFFDCDCDC),
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.image_not_supported),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(14),
+                        ),
+                        child: Image.network(
+                          product.imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFFDCDCDC),
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.image_not_supported),
+                          ),
                         ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(10),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
@@ -221,9 +238,11 @@ class _ProductHomePageState extends State<ProductHomePage> {
           ),
           Text(
             'Hei ${widget.sessionController.currentUser.fullName}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 40,
+              fontSize: 32,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -242,9 +261,13 @@ class _ProductHomePageState extends State<ProductHomePage> {
                   SizedBox(width: 12),
                   Icon(Icons.search, color: Colors.white, size: 30),
                   SizedBox(width: 6),
-                  Text(
-                    'Cari Menu kamu hari ini...',
-                    style: TextStyle(color: Color(0xFFF3D7A9), fontSize: 22),
+                  Expanded(
+                    child: Text(
+                      'Cari Menu kamu hari ini...',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Color(0xFFF3D7A9), fontSize: 18),
+                    ),
                   ),
                 ],
               ),
@@ -255,7 +278,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
             borderRadius: BorderRadius.circular(14),
             child: Image.network(
               'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200',
-              height: 220,
+              height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -265,10 +288,15 @@ class _ProductHomePageState extends State<ProductHomePage> {
     );
   }
 
-  Widget _categoryItem(BuildContext context, String label, ProductCategory? category) {
+  Widget _categoryItem(
+    BuildContext context,
+    String label,
+    ProductCategory? category,
+  ) {
     return InkWell(
       onTap: () => _openCatalog(context, category),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 54,
@@ -277,10 +305,13 @@ class _ProductHomePageState extends State<ProductHomePage> {
               border: Border.all(color: const Color(0xFFD88A16), width: 2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.grid_view_rounded, color: Color(0xFFD88A16)),
+            child: const Icon(
+              Icons.grid_view_rounded,
+              color: Color(0xFFD88A16),
+            ),
           ),
           const SizedBox(height: 6),
-          Text(label),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );

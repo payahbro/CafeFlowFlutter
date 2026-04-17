@@ -39,7 +39,12 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF2C1A0E),
       body: SingleChildScrollView(
-        child: Column(children: [_buildTopSection(), _buildBottomCard()]),
+        child: Column(
+          children: [
+            _buildTopSection(),
+            _buildBottomCard(),
+          ],
+        ),
       ),
     );
   }
@@ -484,17 +489,20 @@ class _RegisterPageState extends State<RegisterPage> {
       final apiClient = ApiClient(baseUrl: AppConfig.productBaseUrl);
       final decoded = await apiClient.post(
         '/auth/register',
-        body: {'email': email, 'password': password, 'full_name': fullName},
+        body: {
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+        },
       );
 
-      final message =
-          decoded['message']?.toString() ??
+      final message = decoded['message']?.toString() ??
           'Registrasi berhasil. Silakan verifikasi email.';
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
 
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
@@ -502,8 +510,9 @@ class _RegisterPageState extends State<RegisterPage> {
       } else {
         navigator.pushReplacement(
           MaterialPageRoute(
-            builder: (context) =>
-                LoginPage(sessionController: widget.sessionController),
+            builder: (context) => LoginPage(
+              sessionController: widget.sessionController,
+            ),
           ),
         );
       }

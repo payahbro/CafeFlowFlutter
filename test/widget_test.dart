@@ -20,7 +20,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Masuk'), findsOneWidget);
+    // "Masuk" tampil sebagai judul dan juga label tombol.
+    expect(find.text('Masuk'), findsAtLeastNWidgets(1));
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
     expect(find.text('customer@cafe.local'), findsOneWidget);

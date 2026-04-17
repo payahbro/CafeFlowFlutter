@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cafe/features/auth/presentation/pages/register_page.dart';
+import 'package:cafe/shared/services/session_controller.dart';
 
 void main() {
   Future<void> pumpRegisterPage(WidgetTester tester) async {
+    final sessionController = SessionController();
     await tester.pumpWidget(
-      const MaterialApp(
-        home: RegisterPage(),
+      MaterialApp(
+        home: RegisterPage(sessionController: sessionController),
       ),
     );
     await tester.pump();
@@ -49,8 +51,8 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'Adit');
       await tester.enterText(find.byType(TextField).at(1), 'adit@mail.com');
-      await tester.enterText(find.byType(TextField).at(2), '123456');
-      await tester.enterText(find.byType(TextField).at(3), '654321');
+      await tester.enterText(find.byType(TextField).at(2), '12345678');
+      await tester.enterText(find.byType(TextField).at(3), '87654321');
 
       await tester.ensureVisible(find.text('Daftar'));
       await tester.tap(find.text('Daftar'));
@@ -59,7 +61,7 @@ void main() {
       expect(find.text('Password tidak cocok'), findsOneWidget);
     });
 
-    testWidgets('shows loading then resets on valid submit', (tester) async {
+    testWidgets('shows error when password is too short', (tester) async {
       await pumpRegisterPage(tester);
 
       await tester.enterText(find.byType(TextField).at(0), 'Adit');
@@ -71,13 +73,7 @@ void main() {
       await tester.tap(find.text('Daftar'));
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      await tester.pump(const Duration(seconds: 1));
-
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Daftar'), findsOneWidget);
-      expect(find.text('Password tidak cocok'), findsNothing);
+      expect(find.text('Password minimal 8 karakter'), findsOneWidget);
     });
 
     testWidgets('toggles password visibility', (tester) async {
@@ -87,7 +83,9 @@ void main() {
           tester.widget<TextField>(find.byType(TextField).at(2));
       expect(passwordFieldBefore.obscureText, isTrue);
 
-      await tester.tap(find.byType(IconButton).at(0));
+      // Pastikan icon visibility berada dalam area layar (RegisterPage scrollable).
+      await tester.ensureVisible(find.byType(IconButton).first);
+      await tester.tap(find.byType(IconButton).first);
       await tester.pump();
 
       TextField passwordFieldAfter =

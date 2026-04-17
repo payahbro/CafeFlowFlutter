@@ -1,4 +1,5 @@
 import 'package:cafe/shared/services/session_controller.dart';
+import 'package:cafe/features/auth/presentation/pages/register_page.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -77,6 +78,22 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text('Masuk'),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RegisterPage(
+                            sessionController: widget.sessionController,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Daftar'),
+                  ),
+                ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -113,9 +130,11 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       setState(() => _error = '$error');
     }
   }
 }
-

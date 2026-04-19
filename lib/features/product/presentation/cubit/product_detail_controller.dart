@@ -24,6 +24,14 @@ class ProductDetailController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   int get quantity => _quantity;
 
+  void setProduct(Product product) {
+    _product = product;
+    _isLoading = false;
+    _errorMessage = null;
+    _primeDefaultSelections();
+    notifyListeners();
+  }
+
   Future<void> load(String id) async {
     _isLoading = true;
     _errorMessage = null;

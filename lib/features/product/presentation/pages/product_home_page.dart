@@ -1,7 +1,6 @@
+import 'package:cafe/features/product/data/mock/mock_products.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
-import 'package:cafe/features/product/domain/entities/product_query.dart';
-import 'package:cafe/features/product/domain/entities/product_list_page.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:cafe/features/product/presentation/pages/product_catalog_page.dart';
@@ -27,12 +26,12 @@ class ProductHomePage extends StatefulWidget {
 }
 
 class _ProductHomePageState extends State<ProductHomePage> {
-  late Future<ProductListPage> _featuredFuture;
+  late final List<Product> _featuredProducts;
 
   @override
   void initState() {
     super.initState();
-    _featuredFuture = widget.getProductsUseCase(const ProductQuery(limit: 8));
+    _featuredProducts = MockProducts.all.take(8).toList();
   }
 
   @override
@@ -40,42 +39,45 @@ class _ProductHomePageState extends State<ProductHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 18),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                'Kategori',
-                style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 18),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'Kategori',
+                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _categoryItem(context, 'Semua', null),
-                  _categoryItem(context, 'Coffee', ProductCategory.coffee),
-                  _categoryItem(context, 'Makanan', ProductCategory.food),
-                  _categoryItem(context, 'Snak', ProductCategory.snack),
-                ],
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _categoryItem(context, 'Semua', null),
+                    _categoryItem(context, 'Coffee', ProductCategory.coffee),
+                    _categoryItem(context, 'Makanan', ProductCategory.food),
+                    _categoryItem(context, 'Snak', ProductCategory.snack),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                'Menu Pilihan',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'Menu Pilihan',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(child: _buildFeaturedProducts()),
-          ],
+              const SizedBox(height: 8),
+              _buildFeaturedProducts(),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -106,101 +108,102 @@ class _ProductHomePageState extends State<ProductHomePage> {
   }
 
   Widget _buildFeaturedProducts() {
-    return FutureBuilder<ProductListPage>(
-      future: _featuredFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (_featuredProducts.isEmpty) {
+      return const Center(child: Text('Belum ada produk'));
+    }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: TextButton(
-              onPressed: () {
-                setState(() {
-                  _featuredFuture = widget.getProductsUseCase(
-                    const ProductQuery(limit: 8),
-                  );
-                });
-              },
-              child: const Text('Gagal memuat produk. Tap untuk coba lagi'),
-            ),
-          );
-        }
-
-        final products = snapshot.data?.data ?? const <Product>[];
-        if (products.isEmpty) {
-          return const Center(child: Text('Belum ada produk'));
-        }
-
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return InkWell(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ProductDetailPage(
-                      productId: product.id,
-                      getProductDetailUseCase: widget.getProductDetailUseCase,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 190,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(14),
-                        ),
-                        child: Image.network(
-                          product.imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFFDCDCDC),
-                            alignment: Alignment.center,
-                            child: const Icon(Icons.image_not_supported),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          CurrencyText(price: product.price),
-                        ],
-                      ),
-                    ),
-                  ],
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.72,
+      ),
+      itemBuilder: (context, index) {
+        final product = _featuredProducts[index];
+        return InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ProductDetailPage(
+                  productId: product.id,
+                  initialProduct: product,
+                  getProductDetailUseCase: widget.getProductDetailUseCase,
                 ),
               ),
             );
           },
-          separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemCount: products.length,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+                  child: Image.network(
+                    product.imageUrl,
+                    width: double.infinity,
+                    height: 140,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 140,
+                      color: const Color(0xFFDCDCDC),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_not_supported),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        product.category.label,
+                        style: const TextStyle(
+                          color: Color(0xFF6E5C52),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(child: CurrencyText(price: product.price)),
+                          const Icon(
+                            Icons.star,
+                            size: 14,
+                            color: Color(0xFFD88A16),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(product.rating.toStringAsFixed(1)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
+      itemCount: _featuredProducts.length,
     );
   }
 
@@ -323,6 +326,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
         builder: (_) => ProductCatalogPage(
           getProductsUseCase: widget.getProductsUseCase,
           getProductDetailUseCase: widget.getProductDetailUseCase,
+          mockProducts: MockProducts.all,
           initialCategory: category,
         ),
       ),

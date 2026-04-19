@@ -10,10 +10,12 @@ class ProductDetailPage extends StatefulWidget {
     super.key,
     required this.productId,
     required this.getProductDetailUseCase,
+    this.initialProduct,
   });
 
   final String productId;
   final GetProductDetailUseCase getProductDetailUseCase;
+  final Product? initialProduct;
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -27,8 +29,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    _controller = ProductDetailController(widget.getProductDetailUseCase)
-      ..load(widget.productId);
+    _controller = ProductDetailController(widget.getProductDetailUseCase);
+    if (widget.initialProduct != null) {
+      _controller.setProduct(widget.initialProduct!);
+    } else {
+      _controller.load(widget.productId);
+    }
   }
 
   @override
@@ -162,13 +168,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildMetaHeader(Product product) {
-    // Dummy text is intentionally used for the COFFEE mock to match the provided design screenshot.
-    // Keep non-coffee categories using real product values so FOOD/SNACK layout can still be tested.
-    final isCoffeeMock = product.category == ProductCategory.coffee;
-    final categoryText =
-        isCoffeeMock ? 'COFFEE' : product.category.label.toUpperCase();
-    final nameText = isCoffeeMock ? 'AMERICANO' : product.name;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -177,7 +176,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                categoryText,
+                product.category.label.toUpperCase(),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -195,7 +194,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       alignment: Alignment.centerLeft,
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        nameText,
+                        product.name,
                         maxLines: 1,
                         softWrap: false,
                         style: const TextStyle(
@@ -241,12 +240,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildDescription(Product product) {
-    final isCoffeeMock = product.category == ProductCategory.coffee;
-    final desc = isCoffeeMock
-        ? 'Espresso dengan air panas — A timeless ritual of bold espresso diluted with filtered hot water, preserving the bean\'s complex aromatics.'
-        : (product.description.isEmpty
-            ? 'Deskripsi produk belum tersedia'
-            : product.description);
+    final desc = product.description.isEmpty
+        ? 'Deskripsi produk belum tersedia'
+        : product.description;
     return Text(
       '"$desc"',
       style: const TextStyle(

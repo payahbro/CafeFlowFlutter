@@ -12,11 +12,13 @@ class ProductCatalogPage extends StatefulWidget {
     super.key,
     required this.getProductsUseCase,
     required this.getProductDetailUseCase,
+    this.mockProducts,
     this.initialCategory,
   });
 
   final GetProductsUseCase getProductsUseCase;
   final GetProductDetailUseCase getProductDetailUseCase;
+  final List<Product>? mockProducts;
   final ProductCategory? initialCategory;
 
   @override
@@ -30,7 +32,10 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
   @override
   void initState() {
     super.initState();
-    _controller = ProductCatalogController(widget.getProductsUseCase);
+    _controller = ProductCatalogController(
+      widget.getProductsUseCase,
+      seedProducts: widget.mockProducts,
+    );
     if (widget.initialCategory != null) {
       _controller.setInitialCategory(widget.initialCategory);
     }
@@ -194,6 +199,7 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
       MaterialPageRoute<void>(
         builder: (_) => ProductDetailPage(
           productId: product.id,
+          initialProduct: product,
           getProductDetailUseCase: widget.getProductDetailUseCase,
         ),
       ),

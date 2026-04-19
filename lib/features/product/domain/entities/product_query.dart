@@ -1,6 +1,8 @@
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 
 class ProductQuery {
+  static const Object _unset = Object();
+
   const ProductQuery({
     this.cursor,
     this.direction = 'next',
@@ -24,23 +26,25 @@ class ProductQuery {
   final bool includeDeleted;
 
   ProductQuery copyWith({
-    String? cursor,
+    Object? cursor = _unset,
     String? direction,
     int? limit,
-    ProductCategory? category,
-    ProductStatus? status,
-    String? search,
+    Object? category = _unset,
+    Object? status = _unset,
+    Object? search = _unset,
     ProductSortBy? sortBy,
     SortDirection? sortDirection,
     bool? includeDeleted,
   }) {
     return ProductQuery(
-      cursor: cursor ?? this.cursor,
+      cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
       direction: direction ?? this.direction,
       limit: limit ?? this.limit,
-      category: category ?? this.category,
-      status: status ?? this.status,
-      search: search ?? this.search,
+      category: identical(category, _unset)
+          ? this.category
+          : category as ProductCategory?,
+      status: identical(status, _unset) ? this.status : status as ProductStatus?,
+      search: identical(search, _unset) ? this.search : search as String?,
       sortBy: sortBy ?? this.sortBy,
       sortDirection: sortDirection ?? this.sortDirection,
       includeDeleted: includeDeleted ?? this.includeDeleted,
@@ -61,4 +65,3 @@ class ProductQuery {
     };
   }
 }
-

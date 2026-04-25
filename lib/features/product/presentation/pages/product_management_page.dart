@@ -1,6 +1,4 @@
-import 'dart:math';
-
-import 'package:cafe/features/product/data/mock/mock_products.dart';
+import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -317,12 +315,19 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                enabled: product.status != ProductStatus.unavailable,
                 title: const Text('Update status'),
-                subtitle: const Text('Pegawai: available/out_of_stock'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await _pickStatus(context, product, isAdmin: isAdmin);
-                },
+                subtitle: Text(
+                  product.status == ProductStatus.unavailable
+                      ? 'Produk unavailable hanya bisa di-restore Admin'
+                      : 'Pegawai: available/out_of_stock',
+                ),
+                onTap: product.status == ProductStatus.unavailable
+                    ? null
+                    : () async {
+                        Navigator.pop(ctx);
+                        await _pickStatus(context, product, isAdmin: isAdmin);
+                      },
               ),
               ListTile(
                 enabled: isAdmin && product.status != ProductStatus.unavailable,
@@ -843,29 +848,14 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
 }
 
 class _ProductManagementMockController extends ChangeNotifier {
-  _ProductManagementMockController({required this.role}) {
-    _allProducts = MockProducts.all
-        .map(
-          (product) => Product(
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            category: product.category,
-            status: product.status,
-            imageUrl: product.imageUrl,
-            rating: product.rating,
-            totalSold: product.totalSold,
-            attributes: product.attributes,
-            createdAt: product.createdAt,
-            updatedAt: product.updatedAt,
-            deletedAt: product.deletedAt,
-          ),
-        )
-        .toList();
+  _ProductManagementMockController({required this.role})
+    : _store = ProductMockStore.instance {
+    _allProducts = _store.products;
+    _store.addListener(_onStoreChanged);
   }
 
   final UserRole role;
+  final ProductMockStore _store;
   late List<Product> _allProducts;
 
   bool _isLoading = false;
@@ -983,23 +973,7 @@ class _ProductManagementMockController extends ChangeNotifier {
       return;
     }
 
-    final now = DateTime.now();
-    final product = Product(
-      id: _newProductId(),
-      name: input.name ?? '-',
-      description: input.description ?? '',
-      price: input.price ?? 0,
-      category: input.category ?? ProductCategory.coffee,
-      status: input.status ?? ProductStatus.available,
-      imageUrl: input.imageUrl ?? '',
-      rating: 0,
-      totalSold: 0,
-      attributes: input.attributes ?? _defaultAttributes(input.category ?? ProductCategory.coffee),
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    _allProducts = <Product>[product, ..._allProducts];
+    await _store.create(input);
     _errorMessage = null;
     notifyListeners();
   }
@@ -1011,53 +985,33 @@ class _ProductManagementMockController extends ChangeNotifier {
       return;
     }
 
-    _allProducts = _allProducts.map((product) {
-      if (product.id != id) return product;
-      return Product(
-        id: product.id,
-        name: input.name ?? product.name,
-        description: input.description ?? product.description,
-        price: input.price ?? product.price,
-        category: input.category ?? product.category,
-        status: input.status ?? product.status,
-        imageUrl: input.imageUrl ?? product.imageUrl,
-        rating: product.rating,
-        totalSold: product.totalSold,
-        attributes: input.attributes ?? product.attributes,
-        createdAt: product.createdAt,
-        updatedAt: DateTime.now(),
-        deletedAt: product.deletedAt,
-      );
-    }).toList();
+    await _store.update(id, input);
     _errorMessage = null;
     notifyListeners();
   }
 
   Future<void> updateStatus(String id, ProductStatus nextStatus) async {
+    final currentIndex = _allProducts.indexWhere((product) => product.id == id);
+    if (currentIndex == -1) {
+      _errorMessage = 'Produk tidak ditemukan.';
+      notifyListeners();
+      return;
+    }
+
+    final currentStatus = _allProducts[currentIndex].status;
+    if (currentStatus == ProductStatus.unavailable) {
+      _errorMessage = 'Produk unavailable hanya bisa dipulihkan lewat restore Admin.';
+      notifyListeners();
+      return;
+    }
+
     if (role == UserRole.pegawai && nextStatus == ProductStatus.unavailable) {
       _errorMessage = 'Pegawai tidak bisa set unavailable (403 FORBIDDEN).';
       notifyListeners();
       return;
     }
 
-    _allProducts = _allProducts.map((product) {
-      if (product.id != id) return product;
-      return Product(
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        status: nextStatus,
-        imageUrl: product.imageUrl,
-        rating: product.rating,
-        totalSold: product.totalSold,
-        attributes: product.attributes,
-        createdAt: product.createdAt,
-        updatedAt: DateTime.now(),
-        deletedAt: product.deletedAt,
-      );
-    }).toList();
+    await _store.updateStatus(id, nextStatus);
     _errorMessage = null;
     notifyListeners();
   }
@@ -1069,24 +1023,7 @@ class _ProductManagementMockController extends ChangeNotifier {
       return;
     }
 
-    _allProducts = _allProducts.map((product) {
-      if (product.id != id) return product;
-      return Product(
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        status: ProductStatus.unavailable,
-        imageUrl: product.imageUrl,
-        rating: product.rating,
-        totalSold: product.totalSold,
-        attributes: product.attributes,
-        createdAt: product.createdAt,
-        updatedAt: DateTime.now(),
-        deletedAt: null,
-      );
-    }).toList();
+    await _store.softDelete(id);
     _errorMessage = null;
     notifyListeners();
   }
@@ -1098,48 +1035,20 @@ class _ProductManagementMockController extends ChangeNotifier {
       return;
     }
 
-    _allProducts = _allProducts.map((product) {
-      if (product.id != id) return product;
-      return Product(
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        status: ProductStatus.available,
-        imageUrl: product.imageUrl,
-        rating: product.rating,
-        totalSold: product.totalSold,
-        attributes: product.attributes,
-        createdAt: product.createdAt,
-        updatedAt: DateTime.now(),
-        deletedAt: null,
-      );
-    }).toList();
+    await _store.restore(id);
     _errorMessage = null;
     notifyListeners();
   }
 
-  String _newProductId() {
-    final random = Random();
-    final seed = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
-    return '$seed-${random.nextInt(1 << 31).toRadixString(16)}';
+  @override
+  void dispose() {
+    _store.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
-  ProductAttributes _defaultAttributes(ProductCategory category) {
-    if (category == ProductCategory.coffee) {
-      return const ProductAttributes(
-        temperature: <String>['hot', 'iced'],
-        sugarLevels: <String>['normal', 'less', 'no_sugar'],
-        iceLevels: <String>['normal', 'less', 'no_ice'],
-        sizes: <String>['small', 'medium', 'large'],
-      );
-    }
-
-    return const ProductAttributes(
-      portions: <String>['regular', 'large'],
-      spicyLevels: <String>['no_spicy', 'mild', 'medium', 'hot'],
-    );
+  void _onStoreChanged() {
+    _allProducts = _store.products;
+    notifyListeners();
   }
 }
 

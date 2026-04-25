@@ -1,5 +1,4 @@
-import 'package:cafe/features/product/data/mock/mock_products.dart';
-import 'package:cafe/features/product/domain/entities/product.dart';
+import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart';
@@ -26,12 +25,18 @@ class ProductHomePage extends StatefulWidget {
 }
 
 class _ProductHomePageState extends State<ProductHomePage> {
-  late final List<Product> _featuredProducts;
+  ProductMockStore get _store => ProductMockStore.instance;
 
   @override
   void initState() {
     super.initState();
-    _featuredProducts = MockProducts.all.take(8).toList();
+    _store.addListener(_onProductsChanged);
+  }
+
+  @override
+  void dispose() {
+    _store.removeListener(_onProductsChanged);
+    super.dispose();
   }
 
   @override
@@ -108,7 +113,8 @@ class _ProductHomePageState extends State<ProductHomePage> {
   }
 
   Widget _buildFeaturedProducts() {
-    if (_featuredProducts.isEmpty) {
+    final featuredProducts = _store.customerProducts.take(8).toList();
+    if (featuredProducts.isEmpty) {
       return const Center(child: Text('Belum ada produk'));
     }
 
@@ -123,7 +129,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
         childAspectRatio: 0.72,
       ),
       itemBuilder: (context, index) {
-        final product = _featuredProducts[index];
+        final product = featuredProducts[index];
         return InkWell(
           onTap: () {
             Navigator.of(context).push(
@@ -203,7 +209,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
           ),
         );
       },
-      itemCount: _featuredProducts.length,
+      itemCount: featuredProducts.length,
     );
   }
 
@@ -326,10 +332,15 @@ class _ProductHomePageState extends State<ProductHomePage> {
         builder: (_) => ProductCatalogPage(
           getProductsUseCase: widget.getProductsUseCase,
           getProductDetailUseCase: widget.getProductDetailUseCase,
-          mockProducts: MockProducts.all,
+          mockProducts: _store.customerProducts,
           initialCategory: category,
         ),
       ),
     );
+  }
+
+  void _onProductsChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 }

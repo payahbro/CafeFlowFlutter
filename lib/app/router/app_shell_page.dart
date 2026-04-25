@@ -1,4 +1,5 @@
 import 'package:cafe/app/di/cart_module.dart';
+import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_home_page.dart';
@@ -11,11 +12,13 @@ class AppShellPage extends StatelessWidget {
     super.key,
     required this.productModule,
     required this.cartModule,
+    required this.orderModule,
     required this.sessionController,
   });
 
   final ProductModule productModule;
   final CartModule cartModule;
+  final OrderModule orderModule;
   final SessionController sessionController;
 
   @override
@@ -26,6 +29,7 @@ class AppShellPage extends StatelessWidget {
       return ProductHomePage(
         sessionController: sessionController,
         cartModule: cartModule,
+        orderModule: orderModule,
         getProductsUseCase: productModule.getProductsUseCase,
         getProductDetailUseCase: productModule.getProductDetailUseCase,
       );
@@ -33,6 +37,7 @@ class AppShellPage extends StatelessWidget {
 
     return AdminDashboardPage(
       role: role,
+      orderModule: orderModule,
       sessionController: sessionController,
     );
   }

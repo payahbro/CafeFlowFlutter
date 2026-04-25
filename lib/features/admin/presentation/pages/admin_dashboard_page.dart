@@ -1,4 +1,9 @@
+import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_dashboard_controller.dart';
+import 'package:cafe/features/order/domain/entities/order_status.dart';
+import 'package:cafe/features/order/presentation/pages/admin_order_management_page.dart';
+import 'package:cafe/features/order/presentation/pages/employee_order_queue_page.dart';
+import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_management_page.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:cafe/shared/services/session_controller.dart';
@@ -8,10 +13,12 @@ class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({
     super.key,
     required this.role,
+    required this.orderModule,
     required this.sessionController,
   });
 
   final UserRole role;
+  final OrderModule orderModule;
   final SessionController sessionController;
 
   @override
@@ -47,7 +54,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             return Column(
               children: [
                 _buildTopBar(),
-                if (_controller.isLoading) const LinearProgressIndicator(minHeight: 2),
+                if (_controller.isLoading)
+                  const LinearProgressIndicator(minHeight: 2),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
@@ -56,7 +64,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       children: [
                         const Text(
                           'Admin Dashboard',
-                          style: TextStyle(fontSize: 42, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -97,7 +108,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         const SizedBox(height: 20),
                         const Text(
                           'Quick Access',
-                          style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         GridView.count(
@@ -111,7 +125,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             _QuickAccessCard(
                               title: 'Order\nManagement',
                               icon: Icons.receipt_long_rounded,
-                              onTap: () => _onComingSoonTap('Order Management'),
+                              onTap: _openOrderManagement,
                             ),
                             _QuickAccessCard(
                               title: 'Product\nManagement',
@@ -121,7 +135,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             _QuickAccessCard(
                               title: 'Customer\nManagement',
                               icon: Icons.people_alt_rounded,
-                              onTap: () => _onComingSoonTap('Customer Management'),
+                              onTap: () =>
+                                  _onComingSoonTap('Customer Management'),
                               isEnabled: widget.role == UserRole.admin,
                             ),
                             _QuickAccessCard(
@@ -151,6 +166,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           }
 
           if (index == 0) {
+            _openOrderManagement();
             return;
           }
 
@@ -202,7 +218,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             backgroundColor: const Color(0xFFD88A16),
             child: Text(
               widget.sessionController.currentUser.fullName.characters.first,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -235,6 +254,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProductManagementPage(role: widget.role),
+      ),
+    );
+  }
+
+  void _openOrderManagement() {
+    if (widget.role == UserRole.pegawai) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => EmployeeOrderQueuePage(
+            controller: widget.orderModule.createOrderListController(
+              role: widget.role,
+              initialStatus: OrderStatus.pending,
+            ),
+            onOpenOrderDetail: _openOrderDetail,
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminOrderManagementPage(
+          controller: widget.orderModule.createOrderListController(
+            role: widget.role,
+          ),
+          onOpenOrderDetail: _openOrderDetail,
+        ),
+      ),
+    );
+  }
+
+  void _openOrderDetail(String orderId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => OrderDetailPage(
+          orderId: orderId,
+          role: widget.role,
+          controller: widget.orderModule.createOrderDetailController(),
+        ),
       ),
     );
   }
@@ -279,7 +338,10 @@ class _SummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 20, color: Color(0xFF4C3F37)),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Color(0xFF4C3F37),
+                  ),
                 ),
               ),
               Icon(icon, color: const Color(0xFF6A3A16), size: 24),
@@ -291,14 +353,18 @@ class _SummaryCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 44,
               fontWeight: FontWeight.w700,
-              color: emphasize ? const Color(0xFF8B3A2A) : const Color(0xFF231815),
+              color: emphasize
+                  ? const Color(0xFF8B3A2A)
+                  : const Color(0xFF231815),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             style: TextStyle(
-              color: emphasize ? const Color(0xFF8B3A2A) : const Color(0xFF5A4D45),
+              color: emphasize
+                  ? const Color(0xFF8B3A2A)
+                  : const Color(0xFF5A4D45),
               fontSize: 16,
             ),
           ),
@@ -366,4 +432,3 @@ class _QuickAccessCard extends StatelessWidget {
     );
   }
 }
-

@@ -5,6 +5,8 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:cafe/app/di/cart_module.dart';
+import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,10 +14,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cafe/main.dart';
 
 void main() {
-  testWidgets('App shows login gateway smoke test', (WidgetTester tester) async {
+  testWidgets('App shows login gateway smoke test', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       CafeApp(
         productModule: ProductModule(),
+        cartModule: CartModule(),
+        orderModule: OrderModule(),
         sessionController: SessionController(),
       ),
     );

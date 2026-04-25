@@ -1,5 +1,8 @@
 import 'package:cafe/app/di/cart_module.dart';
+import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/features/cart/presentation/pages/cart_page.dart';
+import 'package:cafe/features/order/presentation/pages/customer_order_list_page.dart';
+import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
 import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
@@ -15,12 +18,14 @@ class ProductHomePage extends StatefulWidget {
     super.key,
     required this.sessionController,
     required this.cartModule,
+    required this.orderModule,
     required this.getProductsUseCase,
     required this.getProductDetailUseCase,
   });
 
   final SessionController sessionController;
   final CartModule cartModule;
+  final OrderModule orderModule;
   final GetProductsUseCase getProductsUseCase;
   final GetProductDetailUseCase getProductDetailUseCase;
 
@@ -92,6 +97,11 @@ class _ProductHomePageState extends State<ProductHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         onTap: (index) {
+          if (index == 1) {
+            _openOrders(context);
+            return;
+          }
+
           if (index == 2) {
             _openCart(context);
           }
@@ -358,5 +368,27 @@ class _ProductHomePageState extends State<ProductHomePage> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const CartPage()));
+  }
+
+  void _openOrders(BuildContext context) {
+    final role = widget.sessionController.currentUser.role;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CustomerOrderListPage(
+          controller: widget.orderModule.createOrderListController(role: role),
+          onOpenOrderDetail: (orderId) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => OrderDetailPage(
+                  orderId: orderId,
+                  role: role,
+                  controller: widget.orderModule.createOrderDetailController(),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }

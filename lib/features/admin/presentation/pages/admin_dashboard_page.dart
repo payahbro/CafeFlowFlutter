@@ -1,5 +1,8 @@
+import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_dashboard_controller.dart';
+import 'package:cafe/features/admin/presentation/pages/admin_customer_management_page.dart';
+import 'package:cafe/features/admin/presentation/pages/admin_reporting_page.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/presentation/pages/admin_order_management_page.dart';
 import 'package:cafe/features/order/presentation/pages/employee_order_queue_page.dart';
@@ -14,11 +17,13 @@ class AdminDashboardPage extends StatefulWidget {
     super.key,
     required this.role,
     required this.orderModule,
+    required this.adminModule,
     required this.sessionController,
   });
 
   final UserRole role;
   final OrderModule orderModule;
+  final AdminModule adminModule;
   final SessionController sessionController;
 
   @override
@@ -135,14 +140,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             _QuickAccessCard(
                               title: 'Customer\nManagement',
                               icon: Icons.people_alt_rounded,
-                              onTap: () =>
-                                  _onComingSoonTap('Customer Management'),
+                              onTap: _openCustomerManagement,
                               isEnabled: widget.role == UserRole.admin,
                             ),
                             _QuickAccessCard(
                               title: 'Reporting',
                               icon: Icons.bar_chart_rounded,
-                              onTap: () => _onComingSoonTap('Reporting'),
+                              onTap: _openReporting,
                               isEnabled: widget.role == UserRole.admin,
                             ),
                           ],
@@ -175,7 +179,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             3 => 'Reporting',
             _ => 'Order Management',
           };
-          _onComingSoonTap(section);
+          if (widget.role != UserRole.admin) {
+            _showRestricted(section);
+            return;
+          }
+
+          if (index == 2) {
+            _openCustomerManagement();
+            return;
+          }
+
+          if (index == 3) {
+            _openReporting();
+            return;
+          }
         },
         selectedItemColor: const Color(0xFFD88A16),
         unselectedItemColor: const Color(0xFF94A3B8),
@@ -298,9 +315,39 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  void _onComingSoonTap(String section) {
+  void _openCustomerManagement() {
+    if (widget.role != UserRole.admin) {
+      _showRestricted('Customer Management');
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminCustomerManagementPage(
+          controller: widget.adminModule.createCustomerController(),
+        ),
+      ),
+    );
+  }
+
+  void _openReporting() {
+    if (widget.role != UserRole.admin) {
+      _showRestricted('Reporting');
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminReportingPage(
+          controller: widget.adminModule.createReportingController(),
+        ),
+      ),
+    );
+  }
+
+  void _showRestricted(String section) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$section akan diimplementasikan berikutnya.')),
+      SnackBar(content: Text('$section hanya untuk Admin.')),
     );
   }
 }

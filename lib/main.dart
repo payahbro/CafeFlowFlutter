@@ -1,3 +1,4 @@
+import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/app/di/product_module.dart';
@@ -10,12 +11,14 @@ void main() {
   final productModule = ProductModule();
   final cartModule = CartModule();
   final orderModule = OrderModule();
+  final adminModule = AdminModule();
   final sessionController = SessionController();
   runApp(
     CafeApp(
       productModule: productModule,
       cartModule: cartModule,
       orderModule: orderModule,
+      adminModule: adminModule,
       sessionController: sessionController,
     ),
   );
@@ -27,12 +30,14 @@ class CafeApp extends StatelessWidget {
     required this.productModule,
     required this.cartModule,
     required this.orderModule,
+    required this.adminModule,
     required this.sessionController,
   });
 
   final ProductModule productModule;
   final CartModule cartModule;
   final OrderModule orderModule;
+  final AdminModule adminModule;
   final SessionController sessionController;
 
   @override
@@ -53,6 +58,7 @@ class CafeApp extends StatelessWidget {
             productModule: productModule,
             cartModule: cartModule,
             orderModule: orderModule,
+            adminModule: adminModule,
             sessionController: sessionController,
           );
         },

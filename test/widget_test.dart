@@ -5,8 +5,10 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +24,8 @@ void main() {
         productModule: ProductModule(),
         cartModule: CartModule(),
         orderModule: OrderModule(),
+        paymentModule: PaymentModule(),
+        adminModule: AdminModule(),
         sessionController: SessionController(),
       ),
     );

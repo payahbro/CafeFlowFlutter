@@ -81,7 +81,11 @@ class OrderCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  OrderStatusBadge(status: order.status, compact: true),
+                  OrderStatusBadge(
+                    status: order.status,
+                    isExpired: order.isExpiredAt(now),
+                    compact: true,
+                  ),
                 ],
               ),
               const SizedBox(height: 10),

@@ -1,6 +1,7 @@
 import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/app/router/app_shell_page.dart';
 import 'package:cafe/features/auth/presentation/pages/login_page.dart';
@@ -11,6 +12,7 @@ void main() {
   final productModule = ProductModule();
   final cartModule = CartModule();
   final orderModule = OrderModule();
+  final paymentModule = PaymentModule();
   final adminModule = AdminModule();
   final sessionController = SessionController();
   runApp(
@@ -18,6 +20,7 @@ void main() {
       productModule: productModule,
       cartModule: cartModule,
       orderModule: orderModule,
+      paymentModule: paymentModule,
       adminModule: adminModule,
       sessionController: sessionController,
     ),
@@ -30,6 +33,7 @@ class CafeApp extends StatelessWidget {
     required this.productModule,
     required this.cartModule,
     required this.orderModule,
+    required this.paymentModule,
     required this.adminModule,
     required this.sessionController,
   });
@@ -37,6 +41,7 @@ class CafeApp extends StatelessWidget {
   final ProductModule productModule;
   final CartModule cartModule;
   final OrderModule orderModule;
+  final PaymentModule paymentModule;
   final AdminModule adminModule;
   final SessionController sessionController;
 
@@ -49,7 +54,7 @@ class CafeApp extends StatelessWidget {
       ),
       home: AnimatedBuilder(
         animation: sessionController,
-        builder: (_, __) {
+        builder: (context, child) {
           if (!sessionController.isLoggedIn) {
             return LoginPage(sessionController: sessionController);
           }
@@ -58,6 +63,7 @@ class CafeApp extends StatelessWidget {
             productModule: productModule,
             cartModule: cartModule,
             orderModule: orderModule,
+            paymentModule: paymentModule,
             adminModule: adminModule,
             sessionController: sessionController,
           );

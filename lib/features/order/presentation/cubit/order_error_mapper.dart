@@ -17,6 +17,18 @@ String mapOrderError(Object error) {
         return 'Pesanan tidak dapat dibatalkan.';
       case 'ORDER_ALREADY_CANCELLED':
         return 'Pesanan sudah dibatalkan sebelumnya.';
+      case 'ORDER_NOT_PAYABLE':
+        return 'Pesanan tidak dapat dibayar pada status saat ini.';
+      case 'ORDER_EXPIRED':
+        return 'Pesanan sudah melewati batas waktu pembayaran.';
+      case 'PAYMENT_NOT_FOUND':
+        return 'Data pembayaran untuk pesanan ini tidak ditemukan.';
+      case 'PAYMENT_GATEWAY_ERROR':
+        return 'Gateway pembayaran sedang bermasalah. Coba beberapa saat lagi.';
+      case 'EMAIL_UNVERIFIED':
+        return 'Email belum diverifikasi. Selesaikan verifikasi sebelum membayar.';
+      case 'PHONE_NUMBER_REQUIRED':
+        return 'Nomor telepon wajib diisi sebelum melakukan pembayaran.';
       case 'INVALID_STATUS_TRANSITION':
         return 'Transisi status tidak diizinkan.';
       case 'INTERNAL_SERVER_ERROR':

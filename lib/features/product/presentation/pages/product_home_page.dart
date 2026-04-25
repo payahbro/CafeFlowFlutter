@@ -1,5 +1,6 @@
 import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/features/cart/presentation/pages/cart_page.dart';
 import 'package:cafe/features/order/presentation/pages/customer_order_list_page.dart';
 import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
@@ -19,6 +20,7 @@ class ProductHomePage extends StatefulWidget {
     required this.sessionController,
     required this.cartModule,
     required this.orderModule,
+    required this.paymentModule,
     required this.getProductsUseCase,
     required this.getProductDetailUseCase,
   });
@@ -26,6 +28,7 @@ class ProductHomePage extends StatefulWidget {
   final SessionController sessionController;
   final CartModule cartModule;
   final OrderModule orderModule;
+  final PaymentModule paymentModule;
   final GetProductsUseCase getProductsUseCase;
   final GetProductDetailUseCase getProductDetailUseCase;
 
@@ -382,7 +385,10 @@ class _ProductHomePageState extends State<ProductHomePage> {
                 builder: (_) => OrderDetailPage(
                   orderId: orderId,
                   role: role,
-                  controller: widget.orderModule.createOrderDetailController(),
+                  controller: widget.orderModule.createOrderDetailController(
+                    initiatePaymentUseCase:
+                        widget.paymentModule.initiatePaymentUseCase,
+                  ),
                 ),
               ),
             );

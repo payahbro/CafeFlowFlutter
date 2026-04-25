@@ -1,6 +1,7 @@
 import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_home_page.dart';
@@ -14,6 +15,7 @@ class AppShellPage extends StatelessWidget {
     required this.productModule,
     required this.cartModule,
     required this.orderModule,
+    required this.paymentModule,
     required this.adminModule,
     required this.sessionController,
   });
@@ -21,6 +23,7 @@ class AppShellPage extends StatelessWidget {
   final ProductModule productModule;
   final CartModule cartModule;
   final OrderModule orderModule;
+  final PaymentModule paymentModule;
   final AdminModule adminModule;
   final SessionController sessionController;
 
@@ -33,6 +36,7 @@ class AppShellPage extends StatelessWidget {
         sessionController: sessionController,
         cartModule: cartModule,
         orderModule: orderModule,
+        paymentModule: paymentModule,
         getProductsUseCase: productModule.getProductsUseCase,
         getProductDetailUseCase: productModule.getProductDetailUseCase,
       );

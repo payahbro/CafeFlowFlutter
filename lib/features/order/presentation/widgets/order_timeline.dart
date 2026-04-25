@@ -4,24 +4,36 @@ import 'package:cafe/features/order/presentation/widgets/order_ui_tokens.dart';
 import 'package:flutter/material.dart';
 
 class OrderTimeline extends StatelessWidget {
-  const OrderTimeline({super.key, required this.order});
+  const OrderTimeline({super.key, required this.order, required this.now});
 
   final Order order;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
+    final isExpiredPending =
+        order.status == OrderStatus.pending && order.isExpiredAt(now);
     final isConfirmed =
         order.status == OrderStatus.confirmed ||
         order.status == OrderStatus.completed;
     final isDone =
         order.status == OrderStatus.completed ||
-        order.status == OrderStatus.cancelled;
-    final finalLabel = order.status == OrderStatus.cancelled
-        ? 'Dibatalkan'
-        : 'Selesai';
-    final finalColor = order.status == OrderStatus.cancelled
-        ? OrderUiTokens.danger
-        : OrderUiTokens.darkAction;
+        order.status == OrderStatus.cancelled ||
+        isExpiredPending;
+
+    final String finalLabel;
+    final Color finalColor;
+
+    if (isExpiredPending) {
+      finalLabel = 'Expired';
+      finalColor = OrderUiTokens.danger;
+    } else if (order.status == OrderStatus.cancelled) {
+      finalLabel = 'Dibatalkan';
+      finalColor = OrderUiTokens.danger;
+    } else {
+      finalLabel = 'Selesai';
+      finalColor = OrderUiTokens.darkAction;
+    }
 
     return Container(
       width: double.infinity,
@@ -55,7 +67,7 @@ class OrderTimeline extends StatelessWidget {
               _Connector(isActive: isConfirmed || isDone),
               Expanded(
                 child: _TimelineNode(
-                  label: 'Dikonfirmasi',
+                  label: 'Diproses',
                   isDone: isConfirmed,
                   activeColor: const Color(0xFF24613A),
                 ),

@@ -235,7 +235,10 @@ class _OrderCheckoutResultPageState extends State<OrderCheckoutResultPage> {
                   ],
                 ),
               ),
-              OrderStatusBadge(status: order.status),
+              OrderStatusBadge(
+                status: order.status,
+                isExpired: order.isExpiredAt(state.now),
+              ),
             ],
           ),
           if (order.status == OrderStatus.pending) ...[

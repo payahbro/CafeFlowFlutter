@@ -11,6 +11,9 @@ class OrderActionBar extends StatelessWidget {
     required this.role,
     required this.now,
     required this.isBusy,
+    required this.isPaying,
+    required this.supportsPaymentAction,
+    required this.onPay,
     required this.onCancel,
     required this.onConfirm,
     required this.onComplete,
@@ -20,6 +23,9 @@ class OrderActionBar extends StatelessWidget {
   final UserRole role;
   final DateTime now;
   final bool isBusy;
+  final bool isPaying;
+  final bool supportsPaymentAction;
+  final VoidCallback? onPay;
   final VoidCallback? onCancel;
   final VoidCallback? onConfirm;
   final VoidCallback? onComplete;
@@ -29,6 +35,11 @@ class OrderActionBar extends StatelessWidget {
     final isExpired = order.isExpiredAt(now);
     final actions = <Widget>[];
 
+    final canCustomerPay =
+        role == UserRole.customer &&
+        order.status == OrderStatus.pending &&
+        !isExpired &&
+        supportsPaymentAction;
     final canCustomerCancel =
         role == UserRole.customer && order.status == OrderStatus.pending;
     final canPegawaiComplete =
@@ -42,9 +53,38 @@ class OrderActionBar extends StatelessWidget {
     final canAdminComplete =
         role == UserRole.admin && order.status == OrderStatus.confirmed;
 
-    if (canCustomerCancel || canAdminCancel) {
+    if (canCustomerPay) {
       actions.add(
-        Expanded(
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: isBusy || isPaying || onPay == null ? null : onPay,
+            style: OrderUiTokens.primaryButtonStyle(),
+            icon: isPaying
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.payments_outlined),
+            label: Text(
+              isPaying ? 'Memproses pembayaran...' : 'Bayar Sekarang',
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (canCustomerCancel || canAdminCancel) {
+      if (actions.isNotEmpty) {
+        actions.add(const SizedBox(height: 10));
+      }
+      actions.add(
+        SizedBox(
+          width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: isBusy || onCancel == null ? null : onCancel,
             style: OrderUiTokens.dangerOutlinedStyle(),
@@ -57,10 +97,11 @@ class OrderActionBar extends StatelessWidget {
 
     if (canAdminConfirm) {
       if (actions.isNotEmpty) {
-        actions.add(const SizedBox(width: 12));
+        actions.add(const SizedBox(height: 10));
       }
       actions.add(
-        Expanded(
+        SizedBox(
+          width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: isBusy || onConfirm == null ? null : onConfirm,
             style: OrderUiTokens.primaryButtonStyle(
@@ -75,10 +116,11 @@ class OrderActionBar extends StatelessWidget {
 
     if (canPegawaiComplete || canAdminComplete) {
       if (actions.isNotEmpty) {
-        actions.add(const SizedBox(width: 12));
+        actions.add(const SizedBox(height: 10));
       }
       actions.add(
-        Expanded(
+        SizedBox(
+          width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: isBusy || onComplete == null ? null : onComplete,
             style: OrderUiTokens.primaryButtonStyle(),
@@ -101,7 +143,7 @@ class OrderActionBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: OrderUiTokens.border),
       ),
-      child: Row(children: actions),
+      child: Column(children: actions),
     );
   }
 }

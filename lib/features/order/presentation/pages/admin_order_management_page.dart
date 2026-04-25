@@ -4,6 +4,7 @@ import 'package:cafe/features/order/presentation/cubit/order_list_controller.dar
 import 'package:cafe/features/order/presentation/widgets/order_card.dart';
 import 'package:cafe/features/order/presentation/widgets/order_empty_state.dart';
 import 'package:cafe/features/order/presentation/widgets/order_error_state.dart';
+import 'package:cafe/features/order/presentation/widgets/order_loading_skeleton.dart';
 import 'package:cafe/features/order/presentation/widgets/order_ui_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -23,6 +24,8 @@ class AdminOrderManagementPage extends StatefulWidget {
 }
 
 class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
+  static const double _contentMaxWidth = 900;
+
   late final OrderListController _controller;
   late final TextEditingController _userFilterController;
 
@@ -75,88 +78,107 @@ class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
             final state = _controller.state;
 
             if (state.isLoading && state.orders.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildResponsiveBody(const OrderListSkeleton());
             }
 
             if (state.errorMessage != null && state.orders.isEmpty) {
-              return OrderErrorState(
-                message: state.errorMessage!,
-                onRetry: () => _controller.refresh(silent: false),
+              return _buildResponsiveBody(
+                OrderErrorState(
+                  message: state.errorMessage!,
+                  onRetry: () => _controller.refresh(silent: false),
+                ),
               );
             }
 
-            return Column(
-              children: [
-                _buildFilterSection(),
-                Expanded(
-                  child: RefreshIndicator(
-                    color: OrderUiTokens.accentAction,
-                    onRefresh: _controller.refresh,
-                    child: state.orders.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: const [
-                              SizedBox(height: 80),
-                              OrderEmptyState(
-                                title: 'Tidak ada pesanan',
-                                subtitle:
-                                    'Belum ada data pesanan untuk filter saat ini.',
-                              ),
-                            ],
-                          )
-                        : ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            children: [
-                              if (state.errorMessage != null)
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: OrderUiTokens.dangerSoft,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: const Color(0xFFE2C3BC),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    state.errorMessage!,
-                                    style: const TextStyle(
-                                      color: OrderUiTokens.danger,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+            return _buildResponsiveBody(
+              Column(
+                children: [
+                  _buildFilterSection(),
+                  Expanded(
+                    child: RefreshIndicator(
+                      color: OrderUiTokens.accentAction,
+                      onRefresh: _controller.refresh,
+                      child: state.orders.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: const [
+                                SizedBox(height: 80),
+                                OrderEmptyState(
+                                  title: 'Tidak ada pesanan',
+                                  subtitle:
+                                      'Belum ada data pesanan untuk filter saat ini.',
                                 ),
-                              for (
-                                var index = 0;
-                                index < state.orders.length;
-                                index++
-                              ) ...[
-                                OrderCard(
-                                  order: state.orders[index],
-                                  now: state.now,
-                                  onTap: () => widget.onOpenOrderDetail(
-                                    state.orders[index].orderId,
-                                  ),
-                                  showUserId: true,
-                                  footer: _buildQuickActions(
-                                    state.orders[index].orderId,
-                                  ),
-                                ),
-                                if (index != state.orders.length - 1)
-                                  const SizedBox(height: 10),
                               ],
-                              const SizedBox(height: 12),
-                              _buildPaginationBar(),
-                            ],
-                          ),
+                            )
+                          : ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              children: [
+                                if (state.errorMessage != null)
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: OrderUiTokens.dangerSoft,
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: const Color(0xFFE2C3BC),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      state.errorMessage!,
+                                      style: const TextStyle(
+                                        color: OrderUiTokens.danger,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                for (
+                                  var index = 0;
+                                  index < state.orders.length;
+                                  index++
+                                ) ...[
+                                  OrderCard(
+                                    order: state.orders[index],
+                                    now: state.now,
+                                    onTap: () => widget.onOpenOrderDetail(
+                                      state.orders[index].orderId,
+                                    ),
+                                    showUserId: true,
+                                    footer: _buildQuickActions(
+                                      state.orders[index].orderId,
+                                    ),
+                                  ),
+                                  if (index != state.orders.length - 1)
+                                    const SizedBox(height: 10),
+                                ],
+                                const SizedBox(height: 12),
+                                _buildPaginationBar(),
+                              ],
+                            ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsiveBody(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth > _contentMaxWidth
+            ? _contentMaxWidth
+            : constraints.maxWidth;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(width: maxWidth, child: child),
+        );
+      },
     );
   }
 
@@ -345,6 +367,44 @@ class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
   }
 
   Future<void> _cancel(String orderId) async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: OrderUiTokens.cardSurface,
+          title: const Text(
+            'Batalkan pesanan ini?',
+            style: TextStyle(
+              color: OrderUiTokens.primaryText,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: const Text(
+            'Stok produk akan dikembalikan secara otomatis setelah pembatalan.',
+            style: TextStyle(color: OrderUiTokens.primaryText, height: 1.4),
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: OrderUiTokens.secondaryOutlinedStyle(),
+              child: const Text('Kembali'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: OrderUiTokens.primaryButtonStyle(
+                backgroundColor: OrderUiTokens.danger,
+              ),
+              child: const Text('Ya, Batalkan'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldProceed != true) {
+      return;
+    }
+
     await _runAdminAction(
       action: () => _controller.cancelOrder(orderId),
       successMessage: 'Pesanan berhasil dibatalkan',

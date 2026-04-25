@@ -12,6 +12,7 @@ import 'package:cafe/features/order/domain/usecases/update_order_status_usecase.
 import 'package:cafe/features/order/presentation/cubit/order_checkout_result_controller.dart';
 import 'package:cafe/features/order/presentation/cubit/order_detail_controller.dart';
 import 'package:cafe/features/order/presentation/cubit/order_list_controller.dart';
+import 'package:cafe/features/payment/domain/usecases/initiate_payment_usecase.dart';
 import 'package:cafe/shared/models/app_user.dart';
 
 class OrderModule {
@@ -50,11 +51,14 @@ class OrderModule {
     );
   }
 
-  OrderDetailController createOrderDetailController() {
+  OrderDetailController createOrderDetailController({
+    InitiatePaymentUseCase? initiatePaymentUseCase,
+  }) {
     return OrderDetailController(
       getOrderDetailUseCase: getOrderDetailUseCase,
       cancelOrderUseCase: cancelOrderUseCase,
       updateOrderStatusUseCase: updateOrderStatusUseCase,
+      initiatePaymentUseCase: initiatePaymentUseCase,
     );
   }
 

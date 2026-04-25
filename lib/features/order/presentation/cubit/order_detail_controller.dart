@@ -6,6 +6,8 @@ import 'package:cafe/features/order/domain/usecases/get_order_detail_usecase.dar
 import 'package:cafe/features/order/domain/usecases/update_order_status_usecase.dart';
 import 'package:cafe/features/order/presentation/cubit/order_detail_state.dart';
 import 'package:cafe/features/order/presentation/cubit/order_error_mapper.dart';
+import 'package:cafe/features/payment/domain/entities/payment_initiation.dart';
+import 'package:cafe/features/payment/domain/usecases/initiate_payment_usecase.dart';
 import 'package:flutter/foundation.dart';
 
 class OrderDetailController extends ChangeNotifier {
@@ -13,13 +15,16 @@ class OrderDetailController extends ChangeNotifier {
     required GetOrderDetailUseCase getOrderDetailUseCase,
     required CancelOrderUseCase cancelOrderUseCase,
     required UpdateOrderStatusUseCase updateOrderStatusUseCase,
+    InitiatePaymentUseCase? initiatePaymentUseCase,
   }) : _getOrderDetailUseCase = getOrderDetailUseCase,
        _cancelOrderUseCase = cancelOrderUseCase,
-       _updateOrderStatusUseCase = updateOrderStatusUseCase;
+       _updateOrderStatusUseCase = updateOrderStatusUseCase,
+       _initiatePaymentUseCase = initiatePaymentUseCase;
 
   final GetOrderDetailUseCase _getOrderDetailUseCase;
   final CancelOrderUseCase _cancelOrderUseCase;
   final UpdateOrderStatusUseCase _updateOrderStatusUseCase;
+  final InitiatePaymentUseCase? _initiatePaymentUseCase;
 
   OrderDetailState _state = OrderDetailState.initial();
   Timer? _ticker;
@@ -51,12 +56,14 @@ class OrderDetailController extends ChangeNotifier {
         order: detail,
         isLoading: false,
         isMutating: false,
+        isInitiatingPayment: false,
         errorMessage: null,
       );
     } catch (error) {
       _state = _state.copyWith(
         isLoading: false,
         isMutating: false,
+        isInitiatingPayment: false,
         errorMessage: mapOrderError(error),
       );
     }
@@ -100,6 +107,38 @@ class OrderDetailController extends ChangeNotifier {
     }
   }
 
+  bool get supportsPaymentAction => _initiatePaymentUseCase != null;
+
+  Future<PaymentInitiation> initiatePaymentForCurrentOrder() async {
+    final orderId = _state.orderId;
+    final useCase = _initiatePaymentUseCase;
+
+    if (orderId == null || orderId.isEmpty) {
+      throw Exception('Order ID tidak tersedia');
+    }
+
+    if (useCase == null) {
+      throw Exception('Fitur pembayaran tidak tersedia');
+    }
+
+    _state = _state.copyWith(isInitiatingPayment: true, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final result = await useCase(orderId: orderId);
+      _state = _state.copyWith(isInitiatingPayment: false);
+      notifyListeners();
+      return result;
+    } catch (error) {
+      _state = _state.copyWith(
+        isInitiatingPayment: false,
+        errorMessage: mapOrderError(error),
+      );
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   void _ensureTicker() {
     _ticker ??= Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
@@ -119,7 +158,10 @@ class OrderDetailController extends ChangeNotifier {
     _state = _state.copyWith(now: now);
     notifyListeners();
 
-    if (shouldAutoRefresh && !_state.isLoading && !_state.isMutating) {
+    if (shouldAutoRefresh &&
+        !_state.isLoading &&
+        !_state.isMutating &&
+        !_state.isInitiatingPayment) {
       unawaited(refresh());
     }
   }

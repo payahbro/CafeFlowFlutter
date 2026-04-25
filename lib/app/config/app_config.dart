@@ -6,5 +6,7 @@ class AppConfig {
 
   static const String orderBaseUrl = productBaseUrl;
 
+  static const String paymentBaseUrl = productBaseUrl;
+
   static const String adminBaseUrl = productBaseUrl;
 }

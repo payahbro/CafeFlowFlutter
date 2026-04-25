@@ -7,11 +7,14 @@ import 'package:cafe/features/order/presentation/widgets/order_empty_state.dart'
 import 'package:cafe/features/order/presentation/widgets/order_error_state.dart';
 import 'package:cafe/features/order/presentation/widgets/order_formatters.dart';
 import 'package:cafe/features/order/presentation/widgets/order_item_tile.dart';
+import 'package:cafe/features/order/presentation/widgets/order_loading_skeleton.dart';
 import 'package:cafe/features/order/presentation/widgets/order_status_badge.dart';
 import 'package:cafe/features/order/presentation/widgets/order_timeline.dart';
 import 'package:cafe/features/order/presentation/widgets/order_ui_tokens.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderDetailPage extends StatefulWidget {
   const OrderDetailPage({
@@ -30,6 +33,8 @@ class OrderDetailPage extends StatefulWidget {
 }
 
 class _OrderDetailPageState extends State<OrderDetailPage> {
+  static const double _contentMaxWidth = 860;
+
   late final OrderDetailController _controller;
 
   @override
@@ -78,86 +83,119 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             final order = state.order;
 
             if (state.isLoading && order == null) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildResponsiveBody(const OrderDetailSkeleton());
             }
 
             if (state.errorMessage != null && order == null) {
-              return OrderErrorState(
-                message: state.errorMessage!,
-                onRetry: () => _controller.refresh(silent: false),
+              return _buildResponsiveBody(
+                OrderErrorState(
+                  message: state.errorMessage!,
+                  onRetry: () => _controller.refresh(silent: false),
+                ),
               );
             }
 
             if (order == null) {
-              return const OrderEmptyState(
-                title: 'Detail pesanan tidak tersedia',
-                subtitle: 'Pesanan mungkin sudah dihapus atau tidak ditemukan.',
+              return _buildResponsiveBody(
+                const OrderEmptyState(
+                  title: 'Detail pesanan tidak tersedia',
+                  subtitle:
+                      'Pesanan mungkin sudah dihapus atau tidak ditemukan.',
+                ),
               );
             }
 
-            return RefreshIndicator(
-              color: OrderUiTokens.accentAction,
-              onRefresh: _controller.refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  if (state.errorMessage != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: OrderUiTokens.dangerSoft,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFE2C3BC)),
-                      ),
-                      child: Text(
-                        state.errorMessage!,
-                        style: const TextStyle(
-                          color: OrderUiTokens.danger,
-                          fontWeight: FontWeight.w600,
+            return _buildResponsiveBody(
+              RefreshIndicator(
+                color: OrderUiTokens.accentAction,
+                onRefresh: _controller.refresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  children: [
+                    if (state.errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: OrderUiTokens.dangerSoft,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2C3BC)),
+                        ),
+                        child: Text(
+                          state.errorMessage!,
+                          style: const TextStyle(
+                            color: OrderUiTokens.danger,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                    _buildHeaderCard(),
+                    const SizedBox(height: 12),
+                    _buildMetadataCard(),
+                    const SizedBox(height: 12),
+                    OrderTimeline(order: order, now: state.now),
+                    const SizedBox(height: 12),
+                    _buildItemsCard(),
+                    const SizedBox(height: 12),
+                    _buildNotesCard(),
+                    const SizedBox(height: 12),
+                    _buildSummaryCard(),
+                    const SizedBox(height: 16),
+                    OrderActionBar(
+                      order: order,
+                      role: widget.role,
+                      now: state.now,
+                      isBusy: state.isMutating,
+                      isPaying: state.isInitiatingPayment,
+                      supportsPaymentAction:
+                          _controller.supportsPaymentAction &&
+                          widget.role == UserRole.customer,
+                      onPay: _handlePayNow,
+                      onCancel: () => _confirmBeforeCancel(
+                        onConfirmed: () => _handleAction(
+                          title: 'Membatalkan pesanan...',
+                          action: _controller.cancelPendingOrder,
+                          successMessage: 'Pesanan berhasil dibatalkan',
+                        ),
+                      ),
+                      onConfirm: () => _handleAction(
+                        title: 'Mengonfirmasi pesanan...',
+                        action: () =>
+                            _controller.updateStatus(OrderStatus.confirmed),
+                        successMessage:
+                            'Status pesanan diperbarui ke CONFIRMED',
+                      ),
+                      onComplete: () => _handleAction(
+                        title: 'Menyelesaikan pesanan...',
+                        action: () =>
+                            _controller.updateStatus(OrderStatus.completed),
+                        successMessage:
+                            'Status pesanan diperbarui ke COMPLETED',
+                      ),
                     ),
-                  _buildHeaderCard(),
-                  const SizedBox(height: 12),
-                  OrderTimeline(order: order),
-                  const SizedBox(height: 12),
-                  _buildItemsCard(),
-                  const SizedBox(height: 12),
-                  _buildNotesCard(),
-                  const SizedBox(height: 12),
-                  _buildSummaryCard(),
-                  const SizedBox(height: 16),
-                  OrderActionBar(
-                    order: order,
-                    role: widget.role,
-                    now: state.now,
-                    isBusy: state.isMutating,
-                    onCancel: () => _handleAction(
-                      title: 'Membatalkan pesanan...',
-                      action: _controller.cancelPendingOrder,
-                      successMessage: 'Pesanan berhasil dibatalkan',
-                    ),
-                    onConfirm: () => _handleAction(
-                      title: 'Mengonfirmasi pesanan...',
-                      action: () =>
-                          _controller.updateStatus(OrderStatus.confirmed),
-                      successMessage: 'Status pesanan diperbarui ke CONFIRMED',
-                    ),
-                    onComplete: () => _handleAction(
-                      title: 'Menyelesaikan pesanan...',
-                      action: () =>
-                          _controller.updateStatus(OrderStatus.completed),
-                      successMessage: 'Status pesanan diperbarui ke COMPLETED',
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsiveBody(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth > _contentMaxWidth
+            ? _contentMaxWidth
+            : constraints.maxWidth;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(width: maxWidth, child: child),
+        );
+      },
     );
   }
 
@@ -204,7 +242,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   ],
                 ),
               ),
-              OrderStatusBadge(status: order.status),
+              OrderStatusBadge(
+                status: order.status,
+                isExpired: order.isExpiredAt(state.now),
+              ),
             ],
           ),
           if (order.status == OrderStatus.pending) ...[
@@ -216,6 +257,85 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildMetadataCard() {
+    final state = _controller.state;
+    final order = state.order;
+    if (order == null) {
+      return const SizedBox.shrink();
+    }
+
+    final expiresText = order.effectiveExpiresAt == null
+        ? '-'
+        : formatDateTimeLong(order.effectiveExpiresAt);
+    final isExpiredPending =
+        order.status == OrderStatus.pending && order.isExpiredAt(state.now);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: OrderUiTokens.cardSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: OrderUiTokens.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Info Pesanan',
+            style: TextStyle(
+              color: OrderUiTokens.primaryText,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildMetaRow('Order ID', order.orderId),
+          const SizedBox(height: 8),
+          _buildMetaRow('User ID', order.userId),
+          const SizedBox(height: 8),
+          _buildMetaRow('Diperbarui', formatDateTimeLong(order.updatedAt)),
+          const SizedBox(height: 8),
+          _buildMetaRow(
+            'Batas bayar',
+            isExpiredPending ? '$expiresText (expired)' : expiresText,
+            valueColor: isExpiredPending ? OrderUiTokens.danger : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 106,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: OrderUiTokens.mutedText,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? OrderUiTokens.primaryText,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -370,5 +490,164 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(SnackBar(content: Text(mapOrderError(error))));
     }
+  }
+
+  Future<void> _confirmBeforeCancel({
+    required Future<void> Function() onConfirmed,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: OrderUiTokens.cardSurface,
+          title: const Text(
+            'Batalkan pesanan?',
+            style: TextStyle(
+              color: OrderUiTokens.primaryText,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: const Text(
+            'Tindakan ini akan membatalkan pesanan dan tidak bisa dibatalkan kembali.',
+            style: TextStyle(color: OrderUiTokens.primaryText, height: 1.4),
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: OrderUiTokens.secondaryOutlinedStyle(),
+              child: const Text('Kembali'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: OrderUiTokens.primaryButtonStyle(
+                backgroundColor: OrderUiTokens.danger,
+              ),
+              child: const Text('Ya, Batalkan'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await onConfirmed();
+    }
+  }
+
+  Future<void> _handlePayNow() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Menyiapkan halaman pembayaran...')),
+    );
+
+    try {
+      final result = await _controller.initiatePaymentForCurrentOrder();
+      if (!mounted) {
+        return;
+      }
+
+      final url = Uri.tryParse(result.snapRedirectUrl);
+      if (url == null) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('URL pembayaran tidak valid. Silakan coba lagi.'),
+          ),
+        );
+        return;
+      }
+
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      messenger.hideCurrentSnackBar();
+      if (launched) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Aplikasi pembayaran dibuka. Lanjutkan transaksi Anda.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      await _showPaymentLinkDialog(result.snapRedirectUrl);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(mapOrderError(error))));
+    }
+  }
+
+  Future<void> _showPaymentLinkDialog(String paymentUrl) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: OrderUiTokens.cardSurface,
+          title: const Text(
+            'Buka Link Pembayaran',
+            style: TextStyle(
+              color: OrderUiTokens.primaryText,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Salin tautan berikut lalu buka di browser untuk melanjutkan pembayaran:',
+                style: TextStyle(color: OrderUiTokens.primaryText, height: 1.4),
+              ),
+              const SizedBox(height: 10),
+              SelectableText(
+                paymentUrl,
+                style: const TextStyle(
+                  color: OrderUiTokens.darkAction,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OrderUiTokens.secondaryOutlinedStyle(),
+              child: const Text('Tutup'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: paymentUrl));
+                if (!context.mounted) {
+                  return;
+                }
+
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Link pembayaran berhasil disalin.'),
+                  ),
+                );
+              },
+              style: OrderUiTokens.primaryButtonStyle(),
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('Salin Link'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

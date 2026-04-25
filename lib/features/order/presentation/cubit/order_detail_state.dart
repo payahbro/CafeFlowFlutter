@@ -9,6 +9,7 @@ class OrderDetailState {
     required this.now,
     required this.isLoading,
     required this.isMutating,
+    required this.isInitiatingPayment,
     required this.errorMessage,
   });
 
@@ -19,6 +20,7 @@ class OrderDetailState {
       now: DateTime.now(),
       isLoading: false,
       isMutating: false,
+      isInitiatingPayment: false,
       errorMessage: null,
     );
   }
@@ -28,6 +30,7 @@ class OrderDetailState {
   final DateTime now;
   final bool isLoading;
   final bool isMutating;
+  final bool isInitiatingPayment;
   final String? errorMessage;
 
   OrderDetailState copyWith({
@@ -36,6 +39,7 @@ class OrderDetailState {
     DateTime? now,
     bool? isLoading,
     bool? isMutating,
+    bool? isInitiatingPayment,
     Object? errorMessage = _unset,
   }) {
     return OrderDetailState(
@@ -44,6 +48,7 @@ class OrderDetailState {
       now: now ?? this.now,
       isLoading: isLoading ?? this.isLoading,
       isMutating: isMutating ?? this.isMutating,
+      isInitiatingPayment: isInitiatingPayment ?? this.isInitiatingPayment,
       errorMessage: identical(errorMessage, _unset)
           ? this.errorMessage
           : errorMessage as String?,

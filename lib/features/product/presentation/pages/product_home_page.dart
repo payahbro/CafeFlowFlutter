@@ -1,3 +1,5 @@
+import 'package:cafe/app/di/cart_module.dart';
+import 'package:cafe/features/cart/presentation/pages/cart_page.dart';
 import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
@@ -12,11 +14,13 @@ class ProductHomePage extends StatefulWidget {
   const ProductHomePage({
     super.key,
     required this.sessionController,
+    required this.cartModule,
     required this.getProductsUseCase,
     required this.getProductDetailUseCase,
   });
 
   final SessionController sessionController;
+  final CartModule cartModule;
   final GetProductsUseCase getProductsUseCase;
   final GetProductDetailUseCase getProductDetailUseCase;
 
@@ -87,7 +91,11 @@ class _ProductHomePageState extends State<ProductHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
-        onTap: (_) {},
+        onTap: (index) {
+          if (index == 2) {
+            _openCart(context);
+          }
+        },
         selectedItemColor: const Color(0xFFD88A16),
         unselectedItemColor: const Color(0xFF231815),
         items: const [
@@ -138,6 +146,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
                   productId: product.id,
                   initialProduct: product,
                   getProductDetailUseCase: widget.getProductDetailUseCase,
+                  addCartItemUseCase: widget.cartModule.addCartItemUseCase,
                 ),
               ),
             );
@@ -332,6 +341,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
         builder: (_) => ProductCatalogPage(
           getProductsUseCase: widget.getProductsUseCase,
           getProductDetailUseCase: widget.getProductDetailUseCase,
+          addCartItemUseCase: widget.cartModule.addCartItemUseCase,
           mockProducts: _store.customerProducts,
           initialCategory: category,
         ),
@@ -342,5 +352,11 @@ class _ProductHomePageState extends State<ProductHomePage> {
   void _onProductsChanged() {
     if (!mounted) return;
     setState(() {});
+  }
+
+  void _openCart(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const CartPage()));
   }
 }

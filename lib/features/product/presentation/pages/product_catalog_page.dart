@@ -1,3 +1,4 @@
+import 'package:cafe/features/cart/domain/usecases/add_cart_item_usecase.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
@@ -12,12 +13,14 @@ class ProductCatalogPage extends StatefulWidget {
     super.key,
     required this.getProductsUseCase,
     required this.getProductDetailUseCase,
+    required this.addCartItemUseCase,
     this.mockProducts,
     this.initialCategory,
   });
 
   final GetProductsUseCase getProductsUseCase;
   final GetProductDetailUseCase getProductDetailUseCase;
+  final AddCartItemUseCase addCartItemUseCase;
   final List<Product>? mockProducts;
   final ProductCategory? initialCategory;
 
@@ -187,7 +190,7 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
           return ProductCard(
             product: product,
             onTap: () => _openDetail(product),
-            onAdd: () => _showAddedToast(product),
+            onAdd: () => _addToCart(product),
           );
         },
       ),
@@ -201,14 +204,24 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
           productId: product.id,
           initialProduct: product,
           getProductDetailUseCase: widget.getProductDetailUseCase,
+          addCartItemUseCase: widget.addCartItemUseCase,
         ),
       ),
     );
   }
 
-  void _showAddedToast(Product product) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${product.name} ditambahkan ke draft cart lokal')),
-    );
+  Future<void> _addToCart(Product product) async {
+    try {
+      await widget.addCartItemUseCase(productId: product.id, quantity: 1);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} ditambahkan ke keranjang')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+    }
   }
 }

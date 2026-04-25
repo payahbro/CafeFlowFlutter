@@ -1,3 +1,7 @@
+import 'package:cafe/features/cart/domain/entities/cart.dart';
+import 'package:cafe/features/cart/domain/entities/cart_item.dart';
+import 'package:cafe/features/cart/domain/repositories/cart_repository.dart';
+import 'package:cafe/features/cart/domain/usecases/add_cart_item_usecase.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -51,6 +55,39 @@ class _FakeProductRepository implements ProductRepository {
   }
 }
 
+class _FakeCartRepository implements CartRepository {
+  const _FakeCartRepository();
+
+  static const Cart _emptyCart = Cart(
+    cartId: null,
+    userId: 'test-user',
+    items: <CartItem>[],
+    grandTotal: 0,
+    updatedAt: null,
+  );
+
+  @override
+  Future<Cart> getMyCart() async {
+    return _emptyCart;
+  }
+
+  @override
+  Future<Cart> addItem({required String productId, required int quantity}) async {
+    return _emptyCart;
+  }
+
+  @override
+  Future<Cart> updateItemQuantity({required String itemId, required int quantity}) async {
+    return _emptyCart;
+  }
+
+  @override
+  Future<void> removeItem(String itemId) async {}
+
+  @override
+  Future<void> clearMyCart() async {}
+}
+
 Product _baseProduct({
   required ProductCategory category,
   required ProductAttributes attributes,
@@ -88,12 +125,14 @@ void main() {
     );
 
     final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
+    const addCartItemUseCase = AddCartItemUseCase(_FakeCartRepository());
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProductDetailPage(
           productId: 'uuid',
           getProductDetailUseCase: useCase,
+          addCartItemUseCase: addCartItemUseCase,
         ),
       ),
     );
@@ -128,12 +167,14 @@ void main() {
     );
 
     final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
+    const addCartItemUseCase = AddCartItemUseCase(_FakeCartRepository());
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProductDetailPage(
           productId: 'uuid',
           getProductDetailUseCase: useCase,
+          addCartItemUseCase: addCartItemUseCase,
         ),
       ),
     );

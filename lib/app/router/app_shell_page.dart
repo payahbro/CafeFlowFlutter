@@ -1,3 +1,4 @@
+import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_home_page.dart';
@@ -9,10 +10,12 @@ class AppShellPage extends StatelessWidget {
   const AppShellPage({
     super.key,
     required this.productModule,
+    required this.cartModule,
     required this.sessionController,
   });
 
   final ProductModule productModule;
+  final CartModule cartModule;
   final SessionController sessionController;
 
   @override
@@ -22,6 +25,7 @@ class AppShellPage extends StatelessWidget {
     if (role == UserRole.customer) {
       return ProductHomePage(
         sessionController: sessionController,
+        cartModule: cartModule,
         getProductsUseCase: productModule.getProductsUseCase,
         getProductDetailUseCase: productModule.getProductDetailUseCase,
       );

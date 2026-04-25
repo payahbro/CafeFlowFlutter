@@ -1,3 +1,4 @@
+import 'package:cafe/app/di/cart_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/app/router/app_shell_page.dart';
 import 'package:cafe/features/auth/presentation/pages/login_page.dart';
@@ -6,18 +7,27 @@ import 'package:flutter/material.dart';
 
 void main() {
   final productModule = ProductModule();
+  final cartModule = CartModule();
   final sessionController = SessionController();
-  runApp(CafeApp(productModule: productModule, sessionController: sessionController));
+  runApp(
+    CafeApp(
+      productModule: productModule,
+      cartModule: cartModule,
+      sessionController: sessionController,
+    ),
+  );
 }
 
 class CafeApp extends StatelessWidget {
   const CafeApp({
     super.key,
     required this.productModule,
+    required this.cartModule,
     required this.sessionController,
   });
 
   final ProductModule productModule;
+  final CartModule cartModule;
   final SessionController sessionController;
 
   @override
@@ -36,6 +46,7 @@ class CafeApp extends StatelessWidget {
 
           return AppShellPage(
             productModule: productModule,
+            cartModule: cartModule,
             sessionController: sessionController,
           );
         },

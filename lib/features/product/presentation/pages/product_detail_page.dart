@@ -1,3 +1,4 @@
+import 'package:cafe/features/cart/domain/usecases/add_cart_item_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/presentation/cubit/product_detail_controller.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
@@ -10,11 +11,13 @@ class ProductDetailPage extends StatefulWidget {
     super.key,
     required this.productId,
     required this.getProductDetailUseCase,
+    required this.addCartItemUseCase,
     this.initialProduct,
   });
 
   final String productId;
   final GetProductDetailUseCase getProductDetailUseCase;
+  final AddCartItemUseCase addCartItemUseCase;
   final Product? initialProduct;
 
   @override
@@ -25,6 +28,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   late final ProductDetailController _controller;
 
   String? _ensuredDefaultsForProductId;
+  bool _isAddingToCart = false;
 
   @override
   void initState() {
@@ -107,7 +111,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                 ),
-                _buildBottomBar(),
+                _buildBottomBar(product),
               ],
             );
           },
@@ -744,7 +748,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(Product product) {
     return Container(
       color: const Color(0xFFF7F3EF),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -754,15 +758,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           const SizedBox(width: 14),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Sesuai BR Cart, item disimpan sebagai product_id + quantity.',
-                    ),
-                  ),
-                );
-              },
+              onPressed: _isAddingToCart ? null : () => _addToCart(product),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6A3A16),
                 minimumSize: const Size.fromHeight(62),
@@ -790,6 +786,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _addToCart(Product product) async {
+    if (_isAddingToCart) return;
+    setState(() => _isAddingToCart = true);
+
+    try {
+      await widget.addCartItemUseCase(
+        productId: product.id,
+        quantity: _controller.quantity,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} ditambahkan ke keranjang')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _isAddingToCart = false);
+    }
   }
 
   Widget _quantityPill() {

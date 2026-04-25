@@ -477,39 +477,3 @@ Gabungan parameter laporan + format:
 
 > Error code dari endpoint **[IRISAN]** mengikuti modul asal (Order/Product).
 
----
-
-## 8. Caching Policy (Reporting)
-
-- **Engine:** Redis
-- **Key pattern:**
-  - Summary: `report:summary:{date_from}:{date_to}`
-  - Orders periodic: `report:orders:{date_from}:{date_to}:{group_by}`
-- **TTL:** 5 menit
-- **Invalidation:** tidak aktif (biarkan expire by TTL)
-- **Fallback:** jika Redis down -> query DB langsung, jangan fail request
-- **Export:** tidak di-cache, generate fresh per request
-
----
-
-## 9. DB & Transaction Notes
-
-- Back Office tidak menambah mutasi baru di luar modul Order/Product yang sudah ada.
-- Reporting bersifat read-only, tidak butuh transaction.
-- Tidak ada tabel baru khusus Back Office di BR ini.
-
----
-
-## 10. Logging & Monitoring
-
-Wajib log:
-- akses endpoint reporting + `admin_id/pegawai_id`, filter params, durasi query (INFO)
-- request export + actor, format, ukuran file (INFO)
-- query reporting lambat (mis. >2s) (WARNING)
-- gagal generate export (ERROR)
-- akses ditolak role (WARNING)
-- error 500 + stack trace (ERROR)
-
-Tidak perlu log:
-- GET list order/produk/customer yang sukses (sudah di modul masing-masing)
-- cache hit reporting

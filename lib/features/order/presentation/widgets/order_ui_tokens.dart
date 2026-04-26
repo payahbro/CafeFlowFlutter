@@ -23,7 +23,7 @@ class OrderUiTokens {
     return ElevatedButton.styleFrom(
       backgroundColor: backgroundColor ?? darkAction,
       foregroundColor: Colors.white,
-      minimumSize: const Size.fromHeight(58),
+      minimumSize: const Size(0, 58),
       textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 0,
@@ -35,7 +35,7 @@ class OrderUiTokens {
     return OutlinedButton.styleFrom(
       foregroundColor: activeColor,
       side: BorderSide(color: activeColor, width: 1.2),
-      minimumSize: const Size.fromHeight(58),
+      minimumSize: const Size(0, 58),
       textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     );
@@ -45,7 +45,7 @@ class OrderUiTokens {
     return OutlinedButton.styleFrom(
       foregroundColor: danger,
       side: const BorderSide(color: danger, width: 1.2),
-      minimumSize: const Size.fromHeight(58),
+      minimumSize: const Size(0, 58),
       backgroundColor: dangerSoft,
       textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

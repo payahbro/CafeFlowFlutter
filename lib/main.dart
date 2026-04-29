@@ -4,7 +4,7 @@ import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/app/router/app_shell_page.dart';
-import 'package:cafe/features/auth/presentation/pages/login_page.dart';
+import 'package:cafe/features/auth/presentation/pages/onboarding_page.dart';
 import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +56,7 @@ class CafeApp extends StatelessWidget {
         animation: sessionController,
         builder: (context, child) {
           if (!sessionController.isLoggedIn) {
-            return LoginPage(sessionController: sessionController);
+            return OnboardingPage(sessionController: sessionController);
           }
 
           return AppShellPage(

@@ -5,7 +5,7 @@ class CartItem {
   CartItem({
     required this.id,
     required this.productName,
-    required this.imageAsset,
+    required this.imageUrl,
     required this.modifiers,
     required this.price,
     required this.quantity,
@@ -14,7 +14,7 @@ class CartItem {
 
   final String id;
   final String productName;
-  final String imageAsset;
+  final String imageUrl;
   final List<String> modifiers;
   final int price;
   int quantity;
@@ -46,7 +46,8 @@ class _CartPageState extends State<CartPage> {
       CartItem(
         id: '1',
         productName: 'Caramel Latte',
-        imageAsset: 'assets/images/caramel_latte.png',
+        imageUrl:
+            'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800',
         modifiers: const ['Cold', 'Regular', 'Large'],
         price: 15000,
         quantity: 1,
@@ -55,7 +56,8 @@ class _CartPageState extends State<CartPage> {
       CartItem(
         id: '2',
         productName: 'Americano',
-        imageAsset: 'assets/images/americano.png',
+        imageUrl:
+            'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800',
         modifiers: const ['Hot', 'Less Sugar'],
         price: 12000,
         quantity: 2,
@@ -64,7 +66,8 @@ class _CartPageState extends State<CartPage> {
       CartItem(
         id: '3',
         productName: 'Matcha Cream',
-        imageAsset: 'assets/images/matcha_cream.png',
+        imageUrl:
+            'https://images.unsplash.com/photo-1517701550927-30cf4ba1fcef?w=800',
         modifiers: const ['Cold', 'Oat Milk', 'Medium'],
         price: 22000,
         quantity: 1,
@@ -359,8 +362,8 @@ class _CartRow extends StatelessWidget {
             width: 60,
             height: 60,
             color: Colors.white.withValues(alpha: 0.55),
-            child: Image.asset(
-              item.imageAsset,
+            child: Image.network(
+              item.imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) =>
                   Icon(Icons.coffee, color: accentColor, size: 26),

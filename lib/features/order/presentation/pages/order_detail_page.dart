@@ -1,3 +1,4 @@
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/presentation/cubit/order_detail_controller.dart';
 import 'package:cafe/features/order/presentation/cubit/order_error_mapper.dart';
@@ -11,6 +12,7 @@ import 'package:cafe/features/order/presentation/widgets/order_loading_skeleton.
 import 'package:cafe/features/order/presentation/widgets/order_status_badge.dart';
 import 'package:cafe/features/order/presentation/widgets/order_timeline.dart';
 import 'package:cafe/features/order/presentation/widgets/order_ui_tokens.dart';
+import 'package:cafe/features/payment/presentation/pages/payment_page.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,11 +24,13 @@ class OrderDetailPage extends StatefulWidget {
     required this.orderId,
     required this.role,
     required this.controller,
+    this.paymentModule,
   });
 
   final String orderId;
   final UserRole role;
   final OrderDetailController controller;
+  final PaymentModule? paymentModule;
 
   @override
   State<OrderDetailPage> createState() => _OrderDetailPageState();
@@ -535,6 +539,23 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
 
   Future<void> _handlePayNow() async {
+    final order = _controller.state.order;
+    if (order != null && widget.paymentModule != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => PaymentPage(
+            controller: widget.paymentModule!.createPaymentDetailController(),
+            orderId: order.orderId,
+            orderNumber: order.orderNumber,
+            totalAmount: order.totalAmount,
+            itemsCount: order.items.length,
+            expiresAt: order.effectiveExpiresAt,
+          ),
+        ),
+      );
+      return;
+    }
+
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(

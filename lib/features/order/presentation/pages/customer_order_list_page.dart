@@ -5,6 +5,8 @@ import 'package:cafe/features/order/presentation/widgets/order_empty_state.dart'
 import 'package:cafe/features/order/presentation/widgets/order_error_state.dart';
 import 'package:cafe/features/order/presentation/widgets/order_loading_skeleton.dart';
 import 'package:cafe/features/order/presentation/widgets/order_ui_tokens.dart';
+import 'package:cafe/features/payment/presentation/pages/payment_preview_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CustomerOrderListPage extends StatefulWidget {
@@ -62,6 +64,16 @@ class _CustomerOrderListPageState extends State<CustomerOrderListPage> {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Muat ulang',
           ),
+          if (kDebugMode)
+            IconButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PaymentPreviewPage(),
+                ),
+              ),
+              icon: const Icon(Icons.payments_outlined),
+              tooltip: 'Preview pembayaran',
+            ),
         ],
       ),
       body: SafeArea(

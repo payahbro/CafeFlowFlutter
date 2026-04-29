@@ -389,6 +389,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
                     initiatePaymentUseCase:
                         widget.paymentModule.initiatePaymentUseCase,
                   ),
+                  paymentModule: widget.paymentModule,
                 ),
               ),
             );

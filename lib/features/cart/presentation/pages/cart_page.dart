@@ -1,3 +1,4 @@
+import 'package:cafe/features/payment/presentation/pages/payment_preview_page.dart';
 import 'package:flutter/material.dart';
 
 class CartItem {
@@ -193,8 +194,10 @@ class _CartPageState extends State<CartPage> {
         accentColor: _accentColor,
         formatRupiah: _formatRupiah,
         onCheckout: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Checkout pressed (demo)')),
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const PaymentPreviewPage(),
+            ),
           );
         },
       ),

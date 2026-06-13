@@ -24,4 +24,3 @@ class CurrencyText extends StatelessWidget {
     return 'Rp ${buffer.toString()}';
   }
 }
-

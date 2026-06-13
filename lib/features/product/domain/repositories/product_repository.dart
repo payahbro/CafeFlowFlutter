@@ -18,4 +18,3 @@ abstract class ProductRepository {
 
   Future<Product> restoreProduct(String id);
 }
-

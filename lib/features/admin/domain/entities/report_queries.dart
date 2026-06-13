@@ -1,10 +1,7 @@
 import 'package:cafe/features/admin/domain/entities/report_enums.dart';
 
 class ReportSummaryQuery {
-  const ReportSummaryQuery({
-    this.dateFrom,
-    this.dateTo,
-  });
+  const ReportSummaryQuery({this.dateFrom, this.dateTo});
 
   final DateTime? dateFrom;
   final DateTime? dateTo;
@@ -34,10 +31,7 @@ class OrdersReportQuery {
 }
 
 class ProductsReportQuery {
-  const ProductsReportQuery({
-    this.dateFrom,
-    this.dateTo,
-  });
+  const ProductsReportQuery({this.dateFrom, this.dateTo});
 
   final DateTime? dateFrom;
   final DateTime? dateTo;
@@ -72,10 +66,7 @@ class ExportReportQuery {
   }
 }
 
-Map<String, dynamic> _dateRangeParams(
-  DateTime? dateFrom,
-  DateTime? dateTo,
-) {
+Map<String, dynamic> _dateRangeParams(DateTime? dateFrom, DateTime? dateTo) {
   if (dateFrom == null || dateTo == null) {
     return const <String, dynamic>{};
   }

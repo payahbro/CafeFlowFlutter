@@ -6,7 +6,10 @@ abstract class CartRemoteDataSource {
 
   Future<CartModel> addItem({required String productId, required int quantity});
 
-  Future<CartModel> updateItemQuantity({required String itemId, required int quantity});
+  Future<CartModel> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  });
 
   Future<void> removeItem(String itemId);
 
@@ -21,30 +24,36 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   @override
   Future<CartModel> getMyCart() async {
     final response = await _apiClient.get('/cart');
-    final data = response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    final data =
+        response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
     return CartModel.fromJson(data);
   }
 
   @override
-  Future<CartModel> addItem({required String productId, required int quantity}) async {
+  Future<CartModel> addItem({
+    required String productId,
+    required int quantity,
+  }) async {
     final response = await _apiClient.post(
       '/cart/items',
-      body: <String, dynamic>{
-        'product_id': productId,
-        'quantity': quantity,
-      },
+      body: <String, dynamic>{'product_id': productId, 'quantity': quantity},
     );
-    final data = response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    final data =
+        response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
     return CartModel.fromJson(data);
   }
 
   @override
-  Future<CartModel> updateItemQuantity({required String itemId, required int quantity}) async {
+  Future<CartModel> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  }) async {
     final response = await _apiClient.patch(
       '/cart/items/$itemId',
       body: <String, dynamic>{'quantity': quantity},
     );
-    final data = response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+    final data =
+        response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
     return CartModel.fromJson(data);
   }
 

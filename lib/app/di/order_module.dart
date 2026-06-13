@@ -1,5 +1,6 @@
 import 'package:cafe/app/config/app_config.dart';
 import 'package:cafe/core/network/api_client.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/order/data/datasources/order_remote_data_source.dart';
 import 'package:cafe/features/order/data/repositories/order_repository_impl.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
@@ -16,8 +17,11 @@ import 'package:cafe/features/payment/domain/usecases/initiate_payment_usecase.d
 import 'package:cafe/shared/models/app_user.dart';
 
 class OrderModule {
-  OrderModule() {
-    final apiClient = ApiClient(baseUrl: AppConfig.orderBaseUrl);
+  OrderModule({AuthTokenProvider? authTokenProvider}) {
+    final apiClient = ApiClient(
+      baseUrl: AppConfig.orderBaseUrl,
+      authTokenProvider: authTokenProvider,
+    );
     final remote = OrderRemoteDataSourceImpl(apiClient);
     final repository = OrderRepositoryImpl(remote);
 

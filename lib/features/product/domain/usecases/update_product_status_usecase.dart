@@ -10,4 +10,3 @@ class UpdateProductStatusUseCase {
     return _repository.updateProductStatus(id, status);
   }
 }
-

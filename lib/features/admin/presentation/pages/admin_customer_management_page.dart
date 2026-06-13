@@ -4,10 +4,7 @@ import 'package:cafe/features/admin/presentation/cubit/admin_error_mapper.dart';
 import 'package:flutter/material.dart';
 
 class AdminCustomerManagementPage extends StatefulWidget {
-  const AdminCustomerManagementPage({
-    super.key,
-    required this.controller,
-  });
+  const AdminCustomerManagementPage({super.key, required this.controller});
 
   final AdminCustomerController controller;
 
@@ -66,7 +63,9 @@ class _AdminCustomerManagementPageState
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)]),
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)],
+        ),
       ),
       child: Row(
         children: [
@@ -86,7 +85,10 @@ class _AdminCustomerManagementPageState
           ),
           const Text(
             'Admin',
-            style: TextStyle(color: Color(0xFFF3D7A9), fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: Color(0xFFF3D7A9),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -198,10 +200,7 @@ class _AdminCustomerManagementPageState
       width: double.infinity,
       color: const Color(0xFFFFF3E0),
       padding: const EdgeInsets.all(10),
-      child: Text(
-        message,
-        style: const TextStyle(color: Color(0xFF8A3B00)),
-      ),
+      child: Text(message, style: const TextStyle(color: Color(0xFF8A3B00))),
     );
   }
 
@@ -277,7 +276,9 @@ class _AdminCustomerManagementPageState
                 ),
               )
             : const Icon(Icons.expand_more),
-        label: Text(_controller.isPaginating ? 'Memuat...' : 'Muat lebih banyak'),
+        label: Text(
+          _controller.isPaginating ? 'Memuat...' : 'Muat lebih banyak',
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF6A3A16),
           foregroundColor: Colors.white,
@@ -351,10 +352,7 @@ class _AdminCustomerManagementPageState
 }
 
 class _CustomerCard extends StatelessWidget {
-  const _CustomerCard({
-    required this.customer,
-    required this.onTap,
-  });
+  const _CustomerCard({required this.customer, required this.onTap});
 
   final Customer customer;
   final VoidCallback onTap;
@@ -439,10 +437,7 @@ class _CustomerCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 _formatDateShort(customer.createdAt),
-                style: const TextStyle(
-                  color: Color(0xFF8F837C),
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Color(0xFF8F837C), fontSize: 12),
               ),
             ],
           ),

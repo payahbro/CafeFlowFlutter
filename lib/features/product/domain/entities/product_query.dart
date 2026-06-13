@@ -43,7 +43,9 @@ class ProductQuery {
       category: identical(category, _unset)
           ? this.category
           : category as ProductCategory?,
-      status: identical(status, _unset) ? this.status : status as ProductStatus?,
+      status: identical(status, _unset)
+          ? this.status
+          : status as ProductStatus?,
       search: identical(search, _unset) ? this.search : search as String?,
       sortBy: sortBy ?? this.sortBy,
       sortDirection: sortDirection ?? this.sortDirection,

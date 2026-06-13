@@ -34,6 +34,6 @@ void main() {
     expect(find.text('Masuk'), findsAtLeastNWidgets(1));
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
-    expect(find.text('customer@cafe.local'), findsOneWidget);
+    expect(find.text('Masuk ke akun CafeKu'), findsOneWidget);
   });
 }

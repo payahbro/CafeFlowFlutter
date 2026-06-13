@@ -17,10 +17,10 @@ class AdminReportingController extends ChangeNotifier {
     required GetOrdersReportUseCase getOrdersReportUseCase,
     required GetProductsReportUseCase getProductsReportUseCase,
     required ExportReportUseCase exportReportUseCase,
-  })  : _getReportSummaryUseCase = getReportSummaryUseCase,
-        _getOrdersReportUseCase = getOrdersReportUseCase,
-        _getProductsReportUseCase = getProductsReportUseCase,
-        _exportReportUseCase = exportReportUseCase;
+  }) : _getReportSummaryUseCase = getReportSummaryUseCase,
+       _getOrdersReportUseCase = getOrdersReportUseCase,
+       _getProductsReportUseCase = getProductsReportUseCase,
+       _exportReportUseCase = exportReportUseCase;
 
   final GetReportSummaryUseCase _getReportSummaryUseCase;
   final GetOrdersReportUseCase _getOrdersReportUseCase;
@@ -158,10 +158,7 @@ class AdminReportingController extends ChangeNotifier {
 }
 
 class _DateRange {
-  const _DateRange({
-    required this.dateFrom,
-    required this.dateTo,
-  });
+  const _DateRange({required this.dateFrom, required this.dateTo});
 
   final DateTime? dateFrom;
   final DateTime? dateTo;

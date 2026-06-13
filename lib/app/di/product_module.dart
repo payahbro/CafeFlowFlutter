@@ -1,5 +1,6 @@
 import 'package:cafe/app/config/app_config.dart';
 import 'package:cafe/core/network/api_client.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/product/data/datasources/product_remote_data_source.dart';
 import 'package:cafe/features/product/data/repositories/product_repository_impl.dart';
 import 'package:cafe/features/product/domain/usecases/create_product_usecase.dart';
@@ -12,8 +13,11 @@ import 'package:cafe/features/product/domain/usecases/update_product_usecase.dar
 import 'package:cafe/features/product/presentation/cubit/product_management_controller.dart';
 
 class ProductModule {
-  ProductModule() {
-    final apiClient = ApiClient(baseUrl: AppConfig.productBaseUrl);
+  ProductModule({AuthTokenProvider? authTokenProvider}) {
+    final apiClient = ApiClient(
+      baseUrl: AppConfig.productBaseUrl,
+      authTokenProvider: authTokenProvider,
+    );
     final remote = ProductRemoteDataSourceImpl(apiClient);
     final repository = ProductRepositoryImpl(remote);
 
@@ -25,7 +29,11 @@ class ProductModule {
     deleteProductUseCase = DeleteProductUseCase(repository);
     restoreProductUseCase = RestoreProductUseCase(repository);
 
-    productManagementController = ProductManagementController(
+    productManagementController = createProductManagementController();
+  }
+
+  ProductManagementController createProductManagementController() {
+    return ProductManagementController(
       getProductsUseCase: getProductsUseCase,
       createProductUseCase: createProductUseCase,
       updateProductUseCase: updateProductUseCase,
@@ -44,4 +52,3 @@ class ProductModule {
   late final RestoreProductUseCase restoreProductUseCase;
   late final ProductManagementController productManagementController;
 }
-

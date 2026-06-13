@@ -167,8 +167,24 @@ class ProductManagementController extends ChangeNotifier {
   Future<void> deleteProduct(String id) async {
     try {
       _errorMessage = null;
+      final deletedIndex = _products.indexWhere((product) => product.id == id);
+      final productBeforeDelete = deletedIndex == -1
+          ? null
+          : _products[deletedIndex];
+
       await _deleteProductUseCase(id);
+      _includeDeleted = true;
       await loadProducts();
+
+      if (_includeDeleted &&
+          productBeforeDelete != null &&
+          !_products.any((product) => product.id == id)) {
+        _products.insert(
+          deletedIndex.clamp(0, _products.length),
+          _asSoftDeleted(productBeforeDelete),
+        );
+        notifyListeners();
+      }
     } catch (error) {
       _errorMessage = '$error';
       notifyListeners();
@@ -178,11 +194,35 @@ class ProductManagementController extends ChangeNotifier {
   Future<void> restoreProduct(String id) async {
     try {
       _errorMessage = null;
-      await _restoreProductUseCase(id);
+      final restored = await _restoreProductUseCase(id);
       await loadProducts();
+
+      if (!_products.any((product) => product.id == restored.id)) {
+        _products.add(restored);
+        notifyListeners();
+      }
     } catch (error) {
       _errorMessage = '$error';
       notifyListeners();
     }
+  }
+
+  Product _asSoftDeleted(Product product) {
+    final now = DateTime.now();
+    return Product(
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      status: ProductStatus.unavailable,
+      imageUrl: product.imageUrl,
+      rating: product.rating,
+      totalSold: product.totalSold,
+      attributes: product.attributes,
+      createdAt: product.createdAt,
+      updatedAt: now,
+      deletedAt: now,
+    );
   }
 }

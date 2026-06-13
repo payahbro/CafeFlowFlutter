@@ -198,9 +198,7 @@ class _CartPageState extends State<CartPage> {
         formatRupiah: _formatRupiah,
         onCheckout: () {
           Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const PaymentPreviewPage(),
-            ),
+            MaterialPageRoute<void>(builder: (_) => const PaymentPreviewPage()),
           );
         },
       ),

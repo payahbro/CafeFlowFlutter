@@ -21,8 +21,7 @@ class CustomerQuery {
   }) {
     return CustomerQuery(
       search: identical(search, _unset) ? this.search : search as String?,
-      isActive:
-          identical(isActive, _unset) ? this.isActive : isActive as bool?,
+      isActive: identical(isActive, _unset) ? this.isActive : isActive as bool?,
       cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
       limit: limit ?? this.limit,
     );
@@ -32,8 +31,8 @@ class CustomerQuery {
     final safeLimit = limit < 1
         ? 1
         : limit > 100
-            ? 100
-            : limit;
+        ? 100
+        : limit;
 
     return <String, dynamic>{
       'limit': safeLimit,

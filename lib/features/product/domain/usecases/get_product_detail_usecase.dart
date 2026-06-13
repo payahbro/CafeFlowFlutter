@@ -10,4 +10,3 @@ class GetProductDetailUseCase {
     return _repository.getProductDetail(id);
   }
 }
-

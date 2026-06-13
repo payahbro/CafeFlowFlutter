@@ -1,10 +1,7 @@
 import 'package:cafe/features/admin/domain/entities/report_period.dart';
 
 class OrdersReport {
-  const OrdersReport({
-    required this.period,
-    required this.rows,
-  });
+  const OrdersReport({required this.period, required this.rows});
 
   final ReportPeriod period;
   final List<OrdersReportRow> rows;

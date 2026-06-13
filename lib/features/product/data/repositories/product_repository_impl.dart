@@ -51,4 +51,3 @@ class ProductRepositoryImpl implements ProductRepository {
     return model.toEntity();
   }
 }
-

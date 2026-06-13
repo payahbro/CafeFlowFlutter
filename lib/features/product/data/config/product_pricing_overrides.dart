@@ -5,6 +5,5 @@ class ProductPricingOverrides {
   const ProductPricingOverrides._();
 
   /// If non-null, every parsed product will use this price.
-  static const int? forcedPrice = 50000;
+  static const int? forcedPrice = null;
 }
-

@@ -10,4 +10,3 @@ class RestoreProductUseCase {
     return _repository.restoreProduct(id);
   }
 }
-

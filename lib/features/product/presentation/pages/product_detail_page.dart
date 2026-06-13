@@ -129,15 +129,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           width: double.infinity,
           height: 340,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorBuilder: (_, _, _) => Container(
             height: 340,
             color: const Color(0xFF3F2A1D),
             alignment: Alignment.center,
-            child: const Icon(
-              Icons.coffee,
-              color: Colors.white70,
-              size: 40,
-            ),
+            child: const Icon(Icons.coffee, color: Colors.white70, size: 40),
           ),
         ),
         if (rating > 0)
@@ -297,9 +293,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             final isActive = size == _controller.selectedSize;
             return Expanded(
               child: Padding(
-                padding: EdgeInsets.only(
-                  right: size == sizes.last ? 0 : 12,
-                ),
+                padding: EdgeInsets.only(right: size == sizes.last ? 0 : 12),
                 child: _sizeCard(
                   label: size,
                   isActive: isActive,
@@ -436,16 +430,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }).toList();
 
     return Row(
-      children: children
-          .expand(
-            (w) sync* {
-              yield w;
-              if (w != children.last) {
-                yield const SizedBox(width: 12);
-              }
-            },
-          )
-          .toList(),
+      children: children.expand((w) sync* {
+        yield w;
+        if (w != children.last) {
+          yield const SizedBox(width: 12);
+        }
+      }).toList(),
     );
   }
 
@@ -513,8 +503,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    final borderColor = isActive ? const Color(0xFF6A3A16) : const Color(0xFFE0D7D2);
-    final fgColor = isActive ? const Color(0xFF6A3A16) : const Color(0xFF6F6661);
+    final borderColor = isActive
+        ? const Color(0xFF6A3A16)
+        : const Color(0xFFE0D7D2);
+    final fgColor = isActive
+        ? const Color(0xFF6A3A16)
+        : const Color(0xFF6F6661);
 
     return InkWell(
       onTap: onTap,
@@ -532,10 +526,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             const SizedBox(height: 8),
             Text(
               _formatOptionLabel(label),
-              style: TextStyle(
-                color: fgColor,
-                fontWeight: FontWeight.w800,
-              ),
+              style: TextStyle(color: fgColor, fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -586,10 +577,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     if (enabled) return list;
 
-    return Opacity(
-      opacity: 0.45,
-      child: IgnorePointer(child: list),
-    );
+    return Opacity(opacity: 0.45, child: IgnorePointer(child: list));
   }
 
   Widget _listButton({
@@ -685,7 +673,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   List<String> _effectiveCoffeeSugarLevels(Product product) {
     final list = product.attributes.sugarLevels;
-    return list.isNotEmpty ? list : const <String>['normal', 'less', 'no_sugar'];
+    return list.isNotEmpty
+        ? list
+        : const <String>['normal', 'less', 'no_sugar'];
   }
 
   List<String> _effectiveCoffeeIceLevels(Product product) {
@@ -702,7 +692,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   List<String> _effectiveFoodSpicyLevels(Product product) {
     final list = product.attributes.spicyLevels;
-    return list.isNotEmpty ? list : const <String>['no_spicy', 'mild', 'medium', 'hot'];
+    return list.isNotEmpty
+        ? list
+        : const <String>['no_spicy', 'mild', 'medium', 'hot'];
   }
 
   String _formatOptionLabel(String value) {
@@ -749,39 +741,68 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildBottomBar(Product product) {
+    final canBeOrdered = product.status.canBeOrdered;
+
     return Container(
       color: const Color(0xFFF7F3EF),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _quantityPill(),
-          const SizedBox(width: 14),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _isAddingToCart ? null : () => _addToCart(product),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6A3A16),
-                minimumSize: const Size.fromHeight(62),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
+          if (!canBeOrdered) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                product.status.label,
+                style: const TextStyle(
+                  color: Color(0xFF8B3A2A),
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                  SizedBox(width: 10),
-                  Text(
-                    'Add to Cart',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
+            ),
+            const SizedBox(height: 8),
+          ],
+          Row(
+            children: [
+              IgnorePointer(
+                ignoring: !canBeOrdered,
+                child: Opacity(
+                  opacity: canBeOrdered ? 1 : 0.55,
+                  child: _quantityPill(),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: canBeOrdered && !_isAddingToCart
+                      ? () => _addToCart(product)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6A3A16),
+                    disabledBackgroundColor: const Color(0xFFB7AAA2),
+                    minimumSize: const Size.fromHeight(62),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(32),
                     ),
                   ),
-                ],
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                      SizedBox(width: 10),
+                      Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -790,6 +811,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _addToCart(Product product) async {
     if (_isAddingToCart) return;
+    if (!product.status.canBeOrdered) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} sedang ${product.status.label}'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isAddingToCart = true);
 
     try {
@@ -804,12 +834,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
     } finally {
-      if (!mounted) return;
-      setState(() => _isAddingToCart = false);
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
     }
   }
 
@@ -859,4 +890,3 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 }
-

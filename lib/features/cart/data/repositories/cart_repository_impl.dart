@@ -14,7 +14,10 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  Future<Cart> addItem({required String productId, required int quantity}) async {
+  Future<Cart> addItem({
+    required String productId,
+    required int quantity,
+  }) async {
     final model = await _remoteDataSource.addItem(
       productId: productId,
       quantity: quantity,
@@ -23,7 +26,10 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  Future<Cart> updateItemQuantity({required String itemId, required int quantity}) async {
+  Future<Cart> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  }) async {
     final model = await _remoteDataSource.updateItemQuantity(
       itemId: itemId,
       quantity: quantity,

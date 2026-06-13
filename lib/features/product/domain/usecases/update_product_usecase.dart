@@ -11,4 +11,3 @@ class UpdateProductUseCase {
     return _repository.updateProduct(id, input);
   }
 }
-

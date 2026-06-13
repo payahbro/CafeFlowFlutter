@@ -34,4 +34,3 @@ class Product {
 
   bool get isDeleted => deletedAt != null;
 }
-

@@ -9,4 +9,3 @@ class DeleteProductUseCase {
     return _repository.deleteProduct(id);
   }
 }
-

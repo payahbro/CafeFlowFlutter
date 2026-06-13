@@ -9,8 +9,8 @@ class AdminCustomerController extends ChangeNotifier {
   AdminCustomerController({
     required GetCustomersUseCase getCustomersUseCase,
     required GetCustomerDetailUseCase getCustomerDetailUseCase,
-  })  : _getCustomersUseCase = getCustomersUseCase,
-        _getCustomerDetailUseCase = getCustomerDetailUseCase;
+  }) : _getCustomersUseCase = getCustomersUseCase,
+       _getCustomerDetailUseCase = getCustomerDetailUseCase;
 
   final GetCustomersUseCase _getCustomersUseCase;
   final GetCustomerDetailUseCase _getCustomerDetailUseCase;

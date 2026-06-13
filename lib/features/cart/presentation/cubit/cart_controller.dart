@@ -64,7 +64,10 @@ class CartController extends ChangeNotifier {
     return updateItemQuantity(itemId: item.itemId, quantity: item.quantity - 1);
   }
 
-  Future<void> updateItemQuantity({required String itemId, required int quantity}) async {
+  Future<void> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  }) async {
     if (_busyItemIds.contains(itemId)) return;
 
     _busyItemIds.add(itemId);

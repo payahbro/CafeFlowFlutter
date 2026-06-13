@@ -1,47 +1,66 @@
+import 'package:cafe/app/di/auth_module.dart';
+import 'package:cafe/features/auth/domain/repositories/auth_repository.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:flutter/foundation.dart';
 
 class SessionController extends ChangeNotifier {
-  SessionController()
-    : _currentUser = const AppUser(
+  SessionController({AuthRepository? authRepository})
+    : _authRepository = authRepository ?? AuthModule().repository,
+      _currentUser = const AppUser(
         id: 'local-demo-user',
         fullName: 'Raditya',
         role: UserRole.customer,
       );
 
+  final AuthRepository _authRepository;
   AppUser _currentUser;
   bool _isLoggedIn = false;
+  bool _isLoading = false;
+  String? _accessToken;
+  String? _errorMessage;
 
   AppUser get currentUser => _currentUser;
   bool get isLoggedIn => _isLoggedIn;
+  bool get isLoading => _isLoading;
+  String? get accessToken => _accessToken;
+  String? get errorMessage => _errorMessage;
 
-  void loginWithCredentials({required String email, required String password}) {
+  Future<void> loginWithCredentials({
+    required String email,
+    required String password,
+  }) async {
     if (email.trim().isEmpty || password.trim().isEmpty) {
       throw ArgumentError('Email dan password wajib diisi');
     }
 
-    final normalized = email.toLowerCase();
-    final role = normalized.contains('admin')
-        ? UserRole.admin
-        : normalized.contains('pegawai')
-        ? UserRole.pegawai
-        : UserRole.customer;
-
-    final namePart = email.split('@').first.trim();
-    final safeName = namePart.isEmpty ? 'Pengguna' : _capitalize(namePart);
-
-    _currentUser = _currentUser.copyWith(fullName: safeName, role: role);
-    _isLoggedIn = true;
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      final session = await _authRepository.login(
+        email: email.trim(),
+        password: password,
+      );
+      _currentUser = session.user;
+      _accessToken = session.accessToken;
+      _isLoggedIn = true;
+    } catch (error) {
+      _isLoggedIn = false;
+      _accessToken = null;
+      _errorMessage = '$error';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _authRepository.logout();
     _isLoggedIn = false;
+    _accessToken = null;
+    _errorMessage = null;
     notifyListeners();
-  }
-
-  String _capitalize(String value) {
-    if (value.isEmpty) return value;
-    return value[0].toUpperCase() + value.substring(1);
   }
 }

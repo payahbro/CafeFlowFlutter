@@ -2,19 +2,16 @@ import 'package:cafe/features/admin/domain/entities/report_period.dart';
 import 'package:cafe/features/admin/domain/entities/report_products.dart';
 
 class ProductsReportModel {
-  const ProductsReportModel({
-    required this.period,
-    required this.rows,
-  });
+  const ProductsReportModel({required this.period, required this.rows});
 
   final ReportPeriod period;
   final List<ProductsReportRowModel> rows;
 
   factory ProductsReportModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
-    final periodJson = data['period'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
+    final data =
+        json['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+    final periodJson =
+        data['period'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     final rowsJson = data['rows'] as List<dynamic>? ?? const <dynamic>[];
 
     return ProductsReportModel(

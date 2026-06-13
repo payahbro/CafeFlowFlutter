@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cafe/features/cart/domain/usecases/add_cart_item_usecase.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -31,6 +33,7 @@ class ProductCatalogPage extends StatefulWidget {
 class _ProductCatalogPageState extends State<ProductCatalogPage> {
   late final ProductCatalogController _controller;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -47,6 +50,7 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _controller.dispose();
     _searchController.dispose();
     super.dispose();
@@ -99,7 +103,11 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
               ),
               child: TextField(
                 controller: _searchController,
-                onSubmitted: _controller.updateSearch,
+                onChanged: _scheduleSearch,
+                onSubmitted: (value) {
+                  _searchDebounce?.cancel();
+                  _controller.updateSearch(value);
+                },
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
@@ -114,6 +122,16 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
         ],
       ),
     );
+  }
+
+  void _scheduleSearch(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) {
+        return;
+      }
+      _controller.updateSearch(value);
+    });
   }
 
   Widget _buildCategoryFilter() {
@@ -211,6 +229,15 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
   }
 
   Future<void> _addToCart(Product product) async {
+    if (!product.status.canBeOrdered) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} sedang ${product.status.label}'),
+        ),
+      );
+      return;
+    }
+
     try {
       await widget.addCartItemUseCase(productId: product.id, quantity: 1);
       if (!mounted) return;
@@ -219,9 +246,9 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 }

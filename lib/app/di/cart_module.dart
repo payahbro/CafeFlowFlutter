@@ -1,5 +1,6 @@
 import 'package:cafe/app/config/app_config.dart';
 import 'package:cafe/core/network/api_client.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/cart/data/datasources/cart_remote_data_source.dart';
 import 'package:cafe/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:cafe/features/cart/domain/repositories/cart_repository.dart';
@@ -11,8 +12,11 @@ import 'package:cafe/features/cart/domain/usecases/update_cart_item_quantity_use
 import 'package:cafe/features/cart/presentation/cubit/cart_controller.dart';
 
 class CartModule {
-  CartModule() {
-    final apiClient = ApiClient(baseUrl: AppConfig.productBaseUrl);
+  CartModule({AuthTokenProvider? authTokenProvider}) {
+    final apiClient = ApiClient(
+      baseUrl: AppConfig.productBaseUrl,
+      authTokenProvider: authTokenProvider,
+    );
     final remote = CartRemoteDataSourceImpl(apiClient);
     final repository = CartRepositoryImpl(remote);
 

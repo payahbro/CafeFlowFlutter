@@ -43,6 +43,8 @@ extension ProductCategoryX on ProductCategory {
 }
 
 extension ProductStatusX on ProductStatus {
+  bool get canBeOrdered => this == ProductStatus.available;
+
   String get value {
     switch (this) {
       case ProductStatus.available:

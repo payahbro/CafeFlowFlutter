@@ -11,4 +11,3 @@ class GetProductsUseCase {
     return _repository.getProducts(query);
   }
 }
-

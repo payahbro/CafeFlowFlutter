@@ -25,9 +25,33 @@ void main() {
 
     expect(model.category, ProductCategory.coffee);
     expect(model.status, ProductStatus.available);
+    expect(model.price, 25000);
     expect(model.attributes.temperature, ['hot', 'iced']);
     expect(model.attributes.sizes, ['small']);
     expect(model.deletedAt, isNull);
   });
-}
 
+  test('ProductModel marks product as deleted when deleted_at is present', () {
+    final model = ProductModel.fromJson(<String, dynamic>{
+      'id': 'uuid-1',
+      'name': 'Deleted Latte',
+      'description': 'Desc',
+      'price': 25000,
+      'category': 'coffee',
+      'status': 'unavailable',
+      'image_url': 'https://example.com/image.png',
+      'rating': 4.5,
+      'total_sold': 12,
+      'attributes': {
+        'temperature': ['hot'],
+        'sizes': ['small'],
+      },
+      'created_at': '2025-01-01T00:00:00Z',
+      'updated_at': '2025-01-02T00:00:00Z',
+      'deleted_at': '2025-01-02T00:00:00Z',
+    });
+
+    expect(model.deletedAt, DateTime.parse('2025-01-02T00:00:00Z'));
+    expect(model.toEntity().isDeleted, isTrue);
+  });
+}

@@ -47,8 +47,14 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   }
 
   @override
-  Future<ProductModel> updateProduct(String id, UpsertProductInput input) async {
-    final response = await _apiClient.put('/products/$id', body: input.toJson());
+  Future<ProductModel> updateProduct(
+    String id,
+    UpsertProductInput input,
+  ) async {
+    final response = await _apiClient.put(
+      '/products/$id',
+      body: input.toJson(),
+    );
     return ProductModel.fromJson(response['data'] as Map<String, dynamic>);
   }
 
@@ -72,4 +78,3 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     return ProductModel.fromJson(response['data'] as Map<String, dynamic>);
   }
 }
-

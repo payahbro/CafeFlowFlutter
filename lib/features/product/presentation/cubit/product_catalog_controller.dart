@@ -5,8 +5,12 @@ import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart'
 import 'package:flutter/foundation.dart';
 
 class ProductCatalogController extends ChangeNotifier {
-  ProductCatalogController(this._getProductsUseCase, {List<Product>? seedProducts})
-    : _seedProducts = seedProducts;
+  ProductCatalogController(
+    this._getProductsUseCase, {
+    List<Product>? seedProducts,
+  }) : _seedProducts = seedProducts;
+
+  static const int _remotePageLimit = 50;
 
   final GetProductsUseCase _getProductsUseCase;
   final List<Product>? _seedProducts;
@@ -47,10 +51,10 @@ class ProductCatalogController extends ChangeNotifier {
         _nextCursor = null;
         _hasNext = false;
       } else {
-        final page = await _getProductsUseCase(_query.copyWith(cursor: null));
+        final page = await _getProductsUseCase(_remoteQuery(cursor: null));
         _products
           ..clear()
-          ..addAll(page.data);
+          ..addAll(_applyLocalQuery(page.data, _query));
         _nextCursor = page.nextCursor;
         _hasNext = page.hasNext;
       }
@@ -76,8 +80,8 @@ class ProductCatalogController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final page = await _getProductsUseCase(_query.copyWith(cursor: _nextCursor));
-      _products.addAll(page.data);
+      final page = await _getProductsUseCase(_remoteQuery(cursor: _nextCursor));
+      _products.addAll(_applyLocalQuery(page.data, _query));
       _nextCursor = page.nextCursor;
       _hasNext = page.hasNext;
     } catch (error) {
@@ -99,12 +103,24 @@ class ProductCatalogController extends ChangeNotifier {
   }
 
   Future<void> updateSort(ProductSortBy sortBy, SortDirection direction) async {
-    _query = _query.copyWith(sortBy: sortBy, sortDirection: direction, cursor: null);
+    _query = _query.copyWith(
+      sortBy: sortBy,
+      sortDirection: direction,
+      cursor: null,
+    );
     await fetchInitial();
+  }
+
+  ProductQuery _remoteQuery({required String? cursor}) {
+    return _query.copyWith(cursor: cursor, limit: _remotePageLimit);
   }
 
   List<Product> _applyLocalQuery(List<Product> source, ProductQuery query) {
     var result = source.where((product) {
+      if (!query.includeDeleted &&
+          product.status == ProductStatus.unavailable) {
+        return false;
+      }
       if (query.category != null && product.category != query.category) {
         return false;
       }

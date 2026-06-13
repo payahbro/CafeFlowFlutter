@@ -11,4 +11,3 @@ class CreateProductUseCase {
     return _repository.createProduct(input);
   }
 }
-

@@ -15,9 +15,9 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -29,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _namaController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -139,6 +140,17 @@ class _RegisterPageState extends State<RegisterPage> {
             hint: 'Masukkan Email Kamu',
             icon: Icons.mail_outline,
             keyboardType: TextInputType.emailAddress,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildLabel('Nomor Telepon'),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: _phoneController,
+            hint: 'Contoh +628123456789',
+            icon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
           ),
 
           const SizedBox(height: 20),
@@ -410,6 +422,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     final fullName = _namaController.text.trim();
     final email = _emailController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
@@ -444,6 +457,21 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_isValidEmail(email)) {
       setState(() {
         _errorMessage = 'Format email tidak valid';
+      });
+      return;
+    }
+
+    if (phoneNumber.isEmpty) {
+      setState(() {
+        _errorMessage = 'Nomor telepon tidak boleh kosong';
+      });
+      return;
+    }
+
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      setState(() {
+        _errorMessage =
+            'Nomor telepon harus diawali kode negara, contoh +628123456789';
       });
       return;
     }
@@ -484,7 +512,12 @@ class _RegisterPageState extends State<RegisterPage> {
       final apiClient = ApiClient(baseUrl: AppConfig.productBaseUrl);
       final decoded = await apiClient.post(
         '/auth/register',
-        body: {'email': email, 'password': password, 'full_name': fullName},
+        body: {
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+          'phone_number': phoneNumber,
+        },
       );
 
       final message =
@@ -518,10 +551,11 @@ class _RegisterPageState extends State<RegisterPage> {
         _errorMessage = 'Gagal terhubung ke server. Coba lagi.';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -530,5 +564,10 @@ class _RegisterPageState extends State<RegisterPage> {
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     return emailRegex.hasMatch(email);
+  }
+
+  bool _isValidPhoneNumber(String phoneNumber) {
+    final phoneRegex = RegExp(r'^\+[1-9]\d{1,14}$');
+    return phoneRegex.hasMatch(phoneNumber);
   }
 }

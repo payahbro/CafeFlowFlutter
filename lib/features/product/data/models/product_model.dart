@@ -35,19 +35,24 @@ class ProductModel {
   final DateTime? deletedAt;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    final attributesJson = json['attributes'] as Map<String, dynamic>? ??
-        <String, dynamic>{};
+    final attributesJson =
+        json['attributes'] as Map<String, dynamic>? ?? <String, dynamic>{};
 
     return ProductModel(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      price: ProductPricingOverrides.forcedPrice ??
+      price:
+          ProductPricingOverrides.forcedPrice ??
           (json['price'] is int
               ? json['price'] as int
               : int.tryParse('${json['price']}') ?? 0),
-      category: ProductCategoryX.fromValue(json['category'] as String? ?? 'snack'),
-      status: ProductStatusX.fromValue(json['status'] as String? ?? 'available'),
+      category: ProductCategoryX.fromValue(
+        json['category'] as String? ?? 'snack',
+      ),
+      status: ProductStatusX.fromValue(
+        json['status'] as String? ?? 'available',
+      ),
       imageUrl: json['image_url'] as String? ?? '',
       rating: json['rating'] is num ? (json['rating'] as num).toDouble() : 0,
       totalSold: json['total_sold'] is int
@@ -61,9 +66,11 @@ class ProductModel {
         portions: _listFromJson(attributesJson['portions']),
         spicyLevels: _listFromJson(attributesJson['spicy_levels']),
       ),
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       deletedAt: json['deleted_at'] == null
           ? null
@@ -96,4 +103,3 @@ class ProductModel {
     return const <String>[];
   }
 }
-

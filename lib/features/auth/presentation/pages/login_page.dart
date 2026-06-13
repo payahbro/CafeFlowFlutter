@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _error;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -46,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Role akan dibaca dari email (mock): admin / pegawai / lainnya customer',
+                  'Masuk ke akun CafeKu',
                   style: TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
@@ -74,8 +75,14 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _handleLogin,
-                    child: const Text('Masuk'),
+                    onPressed: _isLoading ? null : _handleLogin,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Masuk'),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -94,16 +101,6 @@ class _LoginPageState extends State<LoginPage> {
                     child: const Text('Daftar'),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _quickRoleChip('customer@cafe.local'),
-                    _quickRoleChip('pegawai@cafe.local'),
-                    _quickRoleChip('admin@cafe.local'),
-                  ],
-                ),
               ],
             ),
           ),
@@ -112,21 +109,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _quickRoleChip(String email) {
-    return ActionChip(
-      label: Text(email),
-      onPressed: () {
-        _emailController.text = email;
-        _passwordController.text = '12345678';
-      },
-    );
-  }
-
-  void _handleLogin() {
-    setState(() => _error = null);
+  Future<void> _handleLogin() async {
+    setState(() {
+      _error = null;
+      _isLoading = true;
+    });
 
     try {
-      widget.sessionController.loginWithCredentials(
+      await widget.sessionController.loginWithCredentials(
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -135,6 +125,10 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       setState(() => _error = '$error');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 }

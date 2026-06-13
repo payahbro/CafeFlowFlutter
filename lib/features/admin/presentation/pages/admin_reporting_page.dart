@@ -7,10 +7,7 @@ import 'package:cafe/features/admin/presentation/cubit/admin_reporting_controlle
 import 'package:flutter/material.dart';
 
 class AdminReportingPage extends StatefulWidget {
-  const AdminReportingPage({
-    super.key,
-    required this.controller,
-  });
+  const AdminReportingPage({super.key, required this.controller});
 
   final AdminReportingController controller;
 
@@ -83,7 +80,9 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)]),
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)],
+        ),
       ),
       child: Row(
         children: [
@@ -228,10 +227,7 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
       width: double.infinity,
       color: const Color(0xFFFFF3E0),
       padding: const EdgeInsets.all(10),
-      child: Text(
-        message,
-        style: const TextStyle(color: Color(0xFF8A3B00)),
-      ),
+      child: Text(message, style: const TextStyle(color: Color(0xFF8A3B00))),
     );
   }
 
@@ -306,7 +302,9 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
                             Expanded(
                               child: Text(
                                 item.productName,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             Text('Sold ${item.totalSold}'),
@@ -462,8 +460,9 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
   void _applyFilters() {
     final error = _controller.validateDateRange(_dateFrom, _dateTo);
     if (error != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
@@ -494,8 +493,9 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
     final error = _controller.validateDateRange(_dateFrom, _dateTo);
     if (error != null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
@@ -510,9 +510,9 @@ class _AdminReportingPageState extends State<AdminReportingPage> {
 
     if (result == null) {
       if (_controller.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_controller.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_controller.errorMessage!)));
       }
       return;
     }
@@ -644,10 +644,8 @@ class _ExportDialogState extends State<_ExportDialog> {
             decoration: const InputDecoration(labelText: 'Report type'),
             items: ReportType.values
                 .map(
-                  (type) => DropdownMenuItem(
-                    value: type,
-                    child: Text(type.value),
-                  ),
+                  (type) =>
+                      DropdownMenuItem(value: type, child: Text(type.value)),
                 )
                 .toList(),
             onChanged: (value) {
@@ -682,9 +680,9 @@ class _ExportDialogState extends State<_ExportDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(
-            _ExportSelection(format: _format, reportType: _reportType),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(_ExportSelection(format: _format, reportType: _reportType)),
           child: const Text('Export'),
         ),
       ],

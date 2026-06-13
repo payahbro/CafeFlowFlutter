@@ -1,5 +1,6 @@
 import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_dashboard_controller.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_customer_management_page.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_reporting_page.dart';
@@ -16,12 +17,14 @@ class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({
     super.key,
     required this.role,
+    required this.productModule,
     required this.orderModule,
     required this.adminModule,
     required this.sessionController,
   });
 
   final UserRole role;
+  final ProductModule productModule;
   final OrderModule orderModule;
   final AdminModule adminModule;
   final SessionController sessionController;
@@ -270,7 +273,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   void _openProductManagement() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProductManagementPage(role: widget.role),
+        builder: (_) => ProductManagementPage(
+          role: widget.role,
+          controller: widget.productModule.createProductManagementController(),
+        ),
       ),
     );
   }
@@ -346,9 +352,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   void _showRestricted(String section) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$section hanya untuk Admin.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$section hanya untuk Admin.')));
   }
 }
 

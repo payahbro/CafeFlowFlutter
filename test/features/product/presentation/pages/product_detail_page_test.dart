@@ -56,7 +56,7 @@ class _FakeProductRepository implements ProductRepository {
 }
 
 class _FakeCartRepository implements CartRepository {
-  const _FakeCartRepository();
+  int addItemCallCount = 0;
 
   static const Cart _emptyCart = Cart(
     cartId: null,
@@ -72,12 +72,19 @@ class _FakeCartRepository implements CartRepository {
   }
 
   @override
-  Future<Cart> addItem({required String productId, required int quantity}) async {
+  Future<Cart> addItem({
+    required String productId,
+    required int quantity,
+  }) async {
+    addItemCallCount += 1;
     return _emptyCart;
   }
 
   @override
-  Future<Cart> updateItemQuantity({required String itemId, required int quantity}) async {
+  Future<Cart> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  }) async {
     return _emptyCart;
   }
 
@@ -91,6 +98,7 @@ class _FakeCartRepository implements CartRepository {
 Product _baseProduct({
   required ProductCategory category,
   required ProductAttributes attributes,
+  ProductStatus status = ProductStatus.available,
   double rating = 0,
 }) {
   final now = DateTime(2026, 1, 1);
@@ -100,7 +108,7 @@ Product _baseProduct({
     description: 'Espresso dengan air panas',
     price: 25000,
     category: category,
-    status: ProductStatus.available,
+    status: status,
     imageUrl: 'https://invalid.example/image.png',
     rating: rating,
     totalSold: 0,
@@ -111,52 +119,56 @@ Product _baseProduct({
 }
 
 void main() {
-  testWidgets('Coffee product: shows coffee attributes and toggles Ice on iced',
-      (tester) async {
-    final product = _baseProduct(
-      category: ProductCategory.coffee,
-      rating: 4.5,
-      attributes: const ProductAttributes(
-        temperature: <String>['hot', 'iced'],
-        sizes: <String>['small', 'medium', 'large'],
-        sugarLevels: <String>['normal', 'less', 'no_sugar'],
-        iceLevels: <String>['normal', 'less', 'no_ice'],
-      ),
-    );
-
-    final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
-    const addCartItemUseCase = AddCartItemUseCase(_FakeCartRepository());
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ProductDetailPage(
-          productId: 'uuid',
-          getProductDetailUseCase: useCase,
-          addCartItemUseCase: addCartItemUseCase,
+  testWidgets(
+    'Coffee product: shows coffee attributes and toggles Ice on iced',
+    (tester) async {
+      final product = _baseProduct(
+        category: ProductCategory.coffee,
+        rating: 4.5,
+        attributes: const ProductAttributes(
+          temperature: <String>['hot', 'iced'],
+          sizes: <String>['small', 'medium', 'large'],
+          sugarLevels: <String>['normal', 'less', 'no_sugar'],
+          iceLevels: <String>['normal', 'less', 'no_ice'],
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
+      final cartRepository = _FakeCartRepository();
+      final addCartItemUseCase = AddCartItemUseCase(cartRepository);
 
-    expect(find.text('COFFEE'), findsOneWidget);
-    expect(find.text('AMERICANO'), findsOneWidget);
-    expect(find.text('4.5'), findsOneWidget);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProductDetailPage(
+            productId: 'uuid',
+            getProductDetailUseCase: useCase,
+            addCartItemUseCase: addCartItemUseCase,
+          ),
+        ),
+      );
 
-    expect(find.text('TEMPERATURE'), findsOneWidget);
-    expect(find.text('SIZE SELECTION'), findsOneWidget);
-    expect(find.text('SUGAR LEVELS'), findsOneWidget);
-    expect(find.text('ICE LEVELS'), findsOneWidget);
+      await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Iced'));
-    await tester.tap(find.text('Iced'));
-    await tester.pumpAndSettle();
+      expect(find.text('COFFEE'), findsOneWidget);
+      expect(find.text('Americano'), findsOneWidget);
+      expect(find.text('4.5'), findsOneWidget);
 
-    expect(find.text('ICE LEVELS'), findsOneWidget);
-  });
+      expect(find.text('TEMPERATURE'), findsOneWidget);
+      expect(find.text('SIZE SELECTION'), findsOneWidget);
+      expect(find.text('SUGAR LEVELS'), findsOneWidget);
+      expect(find.text('ICE LEVELS'), findsOneWidget);
 
-  testWidgets('Food product: shows portion/spicy and hides coffee attributes',
-      (tester) async {
+      await tester.ensureVisible(find.text('Iced'));
+      await tester.tap(find.text('Iced'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ICE LEVELS'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Food product: shows portion/spicy and hides coffee attributes', (
+    tester,
+  ) async {
     final product = _baseProduct(
       category: ProductCategory.food,
       rating: 0,
@@ -167,7 +179,8 @@ void main() {
     );
 
     final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
-    const addCartItemUseCase = AddCartItemUseCase(_FakeCartRepository());
+    final cartRepository = _FakeCartRepository();
+    final addCartItemUseCase = AddCartItemUseCase(cartRepository);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -190,6 +203,41 @@ void main() {
     expect(find.text('SIZE SELECTION'), findsNothing);
     expect(find.text('SUGAR LEVELS'), findsNothing);
   });
+
+  testWidgets('Out of stock product cannot be added to cart', (tester) async {
+    final product = _baseProduct(
+      category: ProductCategory.coffee,
+      status: ProductStatus.outOfStock,
+      attributes: const ProductAttributes(
+        temperature: <String>['hot'],
+        sizes: <String>['small'],
+        sugarLevels: <String>['normal'],
+        iceLevels: <String>['normal'],
+      ),
+    );
+
+    final useCase = GetProductDetailUseCase(_FakeProductRepository(product));
+    final cartRepository = _FakeCartRepository();
+    final addCartItemUseCase = AddCartItemUseCase(cartRepository);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProductDetailPage(
+          productId: 'uuid',
+          getProductDetailUseCase: useCase,
+          addCartItemUseCase: addCartItemUseCase,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Out of stock'), findsOneWidget);
+
+    await tester.tap(find.text('Add to Cart'));
+    await tester.pumpAndSettle();
+
+    expect(cartRepository.addItemCallCount, 0);
+    expect(find.text('Americano ditambahkan ke keranjang'), findsNothing);
+  });
 }
-
-

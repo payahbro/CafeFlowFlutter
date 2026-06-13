@@ -9,12 +9,22 @@ import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  final productModule = ProductModule();
-  final cartModule = CartModule();
-  final orderModule = OrderModule();
-  final paymentModule = PaymentModule();
-  final adminModule = AdminModule();
   final sessionController = SessionController();
+  final productModule = ProductModule(
+    authTokenProvider: () => sessionController.accessToken,
+  );
+  final cartModule = CartModule(
+    authTokenProvider: () => sessionController.accessToken,
+  );
+  final orderModule = OrderModule(
+    authTokenProvider: () => sessionController.accessToken,
+  );
+  final paymentModule = PaymentModule(
+    authTokenProvider: () => sessionController.accessToken,
+  );
+  final adminModule = AdminModule(
+    authTokenProvider: () => sessionController.accessToken,
+  );
   runApp(
     CafeApp(
       productModule: productModule,

@@ -17,4 +17,3 @@ class ProductListPage {
   final bool hasNext;
   final bool hasPrev;
 }
-

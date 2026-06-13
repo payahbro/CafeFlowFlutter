@@ -1,5 +1,6 @@
 import 'package:cafe/app/config/app_config.dart';
 import 'package:cafe/core/network/api_client.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/admin/data/datasources/admin_remote_data_source.dart';
 import 'package:cafe/features/admin/data/repositories/admin_repository_impl.dart';
 import 'package:cafe/features/admin/domain/usecases/export_report_usecase.dart';
@@ -12,8 +13,11 @@ import 'package:cafe/features/admin/presentation/cubit/admin_customer_controller
 import 'package:cafe/features/admin/presentation/cubit/admin_reporting_controller.dart';
 
 class AdminModule {
-  AdminModule() {
-    final apiClient = ApiClient(baseUrl: AppConfig.adminBaseUrl);
+  AdminModule({AuthTokenProvider? authTokenProvider}) {
+    final apiClient = ApiClient(
+      baseUrl: AppConfig.adminBaseUrl,
+      authTokenProvider: authTokenProvider,
+    );
     final remote = AdminRemoteDataSourceImpl(apiClient);
     final repository = AdminRepositoryImpl(remote);
 

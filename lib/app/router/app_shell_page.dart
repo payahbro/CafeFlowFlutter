@@ -44,6 +44,7 @@ class AppShellPage extends StatelessWidget {
 
     return AdminDashboardPage(
       role: role,
+      productModule: productModule,
       orderModule: orderModule,
       adminModule: adminModule,
       sessionController: sessionController,

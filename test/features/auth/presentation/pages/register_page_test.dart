@@ -7,9 +7,7 @@ void main() {
   Future<void> pumpRegisterPage(WidgetTester tester) async {
     final sessionController = SessionController();
     await tester.pumpWidget(
-      MaterialApp(
-        home: RegisterPage(sessionController: sessionController),
-      ),
+      MaterialApp(home: RegisterPage(sessionController: sessionController)),
     );
     await tester.pump();
   }
@@ -21,7 +19,8 @@ void main() {
       expect(find.text('Buat Akunmu Sekarang !'), findsOneWidget);
       expect(find.text('Daftar'), findsOneWidget);
       expect(find.text('Google'), findsOneWidget);
-      expect(find.byType(TextField), findsNWidgets(4));
+      expect(find.byType(TextField), findsNWidgets(5));
+      expect(find.text('Nomor Telepon'), findsOneWidget);
     });
 
     testWidgets('shows error when nama is empty', (tester) async {
@@ -38,7 +37,10 @@ void main() {
       await pumpRegisterPage(tester);
 
       await tester.enterText(find.byType(TextField).at(0), 'Adit');
-      await tester.enterText(find.byType(TextField).at(1), 'adit-email-tidak-valid');
+      await tester.enterText(
+        find.byType(TextField).at(1),
+        'adit-email-tidak-valid',
+      );
       await tester.ensureVisible(find.text('Daftar'));
       await tester.tap(find.text('Daftar'));
       await tester.pump();
@@ -46,13 +48,16 @@ void main() {
       expect(find.text('Format email tidak valid'), findsOneWidget);
     });
 
-    testWidgets('shows error when password confirmation does not match', (tester) async {
+    testWidgets('shows error when password confirmation does not match', (
+      tester,
+    ) async {
       await pumpRegisterPage(tester);
 
       await tester.enterText(find.byType(TextField).at(0), 'Adit');
       await tester.enterText(find.byType(TextField).at(1), 'adit@mail.com');
-      await tester.enterText(find.byType(TextField).at(2), '12345678');
-      await tester.enterText(find.byType(TextField).at(3), '87654321');
+      await tester.enterText(find.byType(TextField).at(2), '+628123456789');
+      await tester.enterText(find.byType(TextField).at(3), '12345678');
+      await tester.enterText(find.byType(TextField).at(4), '87654321');
 
       await tester.ensureVisible(find.text('Daftar'));
       await tester.tap(find.text('Daftar'));
@@ -66,8 +71,9 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(0), 'Adit');
       await tester.enterText(find.byType(TextField).at(1), 'adit@mail.com');
-      await tester.enterText(find.byType(TextField).at(2), '123456');
+      await tester.enterText(find.byType(TextField).at(2), '+628123456789');
       await tester.enterText(find.byType(TextField).at(3), '123456');
+      await tester.enterText(find.byType(TextField).at(4), '123456');
 
       await tester.ensureVisible(find.text('Daftar'));
       await tester.tap(find.text('Daftar'));
@@ -79,8 +85,9 @@ void main() {
     testWidgets('toggles password visibility', (tester) async {
       await pumpRegisterPage(tester);
 
-      TextField passwordFieldBefore =
-          tester.widget<TextField>(find.byType(TextField).at(2));
+      TextField passwordFieldBefore = tester.widget<TextField>(
+        find.byType(TextField).at(3),
+      );
       expect(passwordFieldBefore.obscureText, isTrue);
 
       // Pastikan icon visibility berada dalam area layar (RegisterPage scrollable).
@@ -88,10 +95,31 @@ void main() {
       await tester.tap(find.byType(IconButton).first);
       await tester.pump();
 
-      TextField passwordFieldAfter =
-          tester.widget<TextField>(find.byType(TextField).at(2));
+      TextField passwordFieldAfter = tester.widget<TextField>(
+        find.byType(TextField).at(3),
+      );
       expect(passwordFieldAfter.obscureText, isFalse);
+    });
+
+    testWidgets('shows error when phone number format is invalid', (
+      tester,
+    ) async {
+      await pumpRegisterPage(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), 'Adit');
+      await tester.enterText(find.byType(TextField).at(1), 'adit@mail.com');
+      await tester.enterText(find.byType(TextField).at(2), '08123456789');
+
+      await tester.ensureVisible(find.text('Daftar'));
+      await tester.tap(find.text('Daftar'));
+      await tester.pump();
+
+      expect(
+        find.text(
+          'Nomor telepon harus diawali kode negara, contoh +628123456789',
+        ),
+        findsOneWidget,
+      );
     });
   });
 }
-

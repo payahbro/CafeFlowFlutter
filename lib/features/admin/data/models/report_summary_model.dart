@@ -25,12 +25,12 @@ class ReportSummaryModel {
   final int? activeConfirmedOrders;
 
   factory ReportSummaryModel.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
-    final periodJson = data['period'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
-    final topProductsJson = data['top_products'] as List<dynamic>? ??
-        const <dynamic>[];
+    final data =
+        json['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+    final periodJson =
+        data['period'] as Map<String, dynamic>? ?? const <String, dynamic>{};
+    final topProductsJson =
+        data['top_products'] as List<dynamic>? ?? const <dynamic>[];
 
     return ReportSummaryModel(
       period: ReportPeriod(

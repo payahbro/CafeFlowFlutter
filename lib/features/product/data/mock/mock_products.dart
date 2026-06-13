@@ -113,9 +113,7 @@ class MockProducts {
           'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=800',
       rating: 4.2,
       totalSold: 276,
-      attributes: ProductAttributes(
-        portions: <String>['regular', 'large'],
-      ),
+      attributes: ProductAttributes(portions: <String>['regular', 'large']),
       createdAt: DateTime(2025, 1, 26),
       updatedAt: DateTime(2026, 3, 16),
     ),
@@ -130,9 +128,7 @@ class MockProducts {
           'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=800',
       rating: 4.9,
       totalSold: 319,
-      attributes: ProductAttributes(
-        portions: <String>['regular', 'large'],
-      ),
+      attributes: ProductAttributes(portions: <String>['regular', 'large']),
       createdAt: DateTime(2025, 8, 9),
       updatedAt: DateTime(2026, 4, 5),
     ),
@@ -147,12 +143,9 @@ class MockProducts {
           'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=800',
       rating: 4.1,
       totalSold: 95,
-      attributes: ProductAttributes(
-        portions: <String>['regular'],
-      ),
+      attributes: ProductAttributes(portions: <String>['regular']),
       createdAt: DateTime(2025, 11, 2),
       updatedAt: DateTime(2026, 1, 12),
     ),
   ];
 }
-

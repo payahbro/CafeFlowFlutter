@@ -1,31 +1,40 @@
-import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/entities/upsert_product_input.dart';
+import 'package:cafe/features/product/presentation/cubit/product_management_controller.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:flutter/material.dart';
 
 class ProductManagementPage extends StatefulWidget {
-  const ProductManagementPage({super.key, required this.role});
+  const ProductManagementPage({
+    super.key,
+    required this.role,
+    required this.controller,
+  });
 
   final UserRole role;
+  final ProductManagementController controller;
 
   @override
   State<ProductManagementPage> createState() => _ProductManagementPageState();
 }
 
 class _ProductManagementPageState extends State<ProductManagementPage> {
-  late final _ProductManagementMockController _controller;
+  late final ProductManagementController _controller;
   late final TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
-    _controller = _ProductManagementMockController(role: widget.role);
+    _controller = widget.controller;
     _searchController = TextEditingController(text: _controller.search);
-    _controller.loadProducts();
+    if (widget.role == UserRole.admin && !_controller.includeDeleted) {
+      _controller.toggleIncludeDeleted(true);
+    } else {
+      _controller.loadProducts();
+    }
   }
 
   @override
@@ -59,19 +68,25 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                       style: const TextStyle(color: Color(0xFF8A3B00)),
                     ),
                   ),
-                if (_controller.isLoading) const LinearProgressIndicator(minHeight: 2),
+                if (_controller.isLoading)
+                  const LinearProgressIndicator(minHeight: 2),
                 Expanded(
                   child: _controller.products.isEmpty && !_controller.isLoading
                       ? const Center(child: Text('Produk tidak ditemukan'))
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
                           itemCount: _controller.products.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final product = _controller.products[index];
                             return _ProductTile(
                               product: product,
-                              onTap: () => _openActions(context, product, isAdmin: isAdmin),
+                              onTap: () => _openActions(
+                                context,
+                                product,
+                                isAdmin: isAdmin,
+                              ),
                             );
                           },
                         ),
@@ -89,7 +104,9 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)]),
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A0702), Color(0xFF4A1F0C)],
+        ),
       ),
       child: Row(
         children: [
@@ -109,7 +126,10 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
           ),
           Text(
             isAdmin ? 'Admin' : 'Pegawai',
-            style: const TextStyle(color: Color(0xFFF3D7A9), fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: Color(0xFFF3D7A9),
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -293,13 +313,13 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
       context: context,
       builder: (_) => const _ProductFormDialog(),
     );
-    if (result == null) return;
+    if (!context.mounted || result == null) return;
 
     await _controller.createProduct(result);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Produk berhasil dibuat (mock)')),
-    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Produk berhasil dibuat')));
   }
 
   Future<void> _openActions(
@@ -315,14 +335,14 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                enabled: product.status != ProductStatus.unavailable,
+                enabled: !product.isDeleted,
                 title: const Text('Update status'),
                 subtitle: Text(
-                  product.status == ProductStatus.unavailable
-                      ? 'Produk unavailable hanya bisa di-restore Admin'
+                  product.isDeleted
+                      ? 'Produk soft-deleted hanya bisa di-restore Admin'
                       : 'Pegawai: available/out_of_stock',
                 ),
-                onTap: product.status == ProductStatus.unavailable
+                onTap: product.isDeleted
                     ? null
                     : () async {
                         Navigator.pop(ctx);
@@ -330,10 +350,10 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                       },
               ),
               ListTile(
-                enabled: isAdmin && product.status != ProductStatus.unavailable,
+                enabled: isAdmin && !product.isDeleted,
                 title: const Text('Edit produk'),
                 subtitle: const Text('Admin only'),
-                onTap: !isAdmin || product.status == ProductStatus.unavailable
+                onTap: !isAdmin || product.isDeleted
                     ? null
                     : () async {
                         Navigator.pop(ctx);
@@ -346,10 +366,10 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                       },
               ),
               ListTile(
-                enabled: isAdmin && product.status != ProductStatus.unavailable,
+                enabled: isAdmin && !product.isDeleted,
                 title: const Text('Soft delete produk'),
                 subtitle: const Text('Admin only'),
-                onTap: !isAdmin || product.status == ProductStatus.unavailable
+                onTap: !isAdmin || product.isDeleted
                     ? null
                     : () async {
                         Navigator.pop(ctx);
@@ -357,10 +377,10 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                       },
               ),
               ListTile(
-                enabled: isAdmin && product.status == ProductStatus.unavailable,
+                enabled: isAdmin && product.isDeleted,
                 title: const Text('Restore produk'),
                 subtitle: const Text('Admin only'),
-                onTap: !isAdmin || product.status != ProductStatus.unavailable
+                onTap: !isAdmin || !product.isDeleted
                     ? null
                     : () async {
                         Navigator.pop(ctx);
@@ -403,11 +423,11 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     );
 
     if (selected == null) return;
-    await _controller.updateStatus(product.id, selected);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Status berhasil diperbarui (mock)')),
-    );
+    await _controller.updateStatus(product.id, selected.value);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Status berhasil diperbarui')));
   }
 }
 
@@ -442,7 +462,7 @@ class _ProductTile extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     width: 64,
                     height: 64,
                     color: const Color(0xFFDCDCDC),
@@ -460,7 +480,10 @@ class _ProductTile extends StatelessWidget {
                       product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Wrap(
@@ -474,9 +497,12 @@ class _ProductTile extends StatelessWidget {
                         Chip(
                           label: Text(product.status.value),
                           visualDensity: VisualDensity.compact,
-                          labelStyle: TextStyle(color: statusColor, fontWeight: FontWeight.w700),
+                          labelStyle: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        if (product.status == ProductStatus.unavailable)
+                        if (product.isDeleted)
                           const Chip(
                             label: Text('soft-deleted'),
                             visualDensity: VisualDensity.compact,
@@ -532,7 +558,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
     _priceController = TextEditingController(
       text: widget.existing == null ? '' : '${widget.existing!.price}',
     );
-    _imageController = TextEditingController(text: widget.existing?.imageUrl ?? '');
+    _imageController = TextEditingController(
+      text: widget.existing?.imageUrl ?? '',
+    );
     _category = widget.existing?.category ?? ProductCategory.coffee;
     _status = widget.existing?.status ?? ProductStatus.available;
     final attrs = widget.existing?.attributes ?? _defaultAttributes(_category);
@@ -620,7 +648,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<ProductCategory>(
-                  value: _category,
+                  initialValue: _category,
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: ProductCategory.values
                       .map(
@@ -647,7 +675,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<ProductStatus>(
-                  value: _status,
+                  initialValue: _status,
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: ProductStatus.values
                       .map(
@@ -681,20 +709,32 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
             final attributes = _buildAttributesFromSelection();
             final attrsError = _validateAttributes(attributes);
             if (attrsError != null) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(attrsError)));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(attrsError)));
               return;
             }
 
-            final input = UpsertProductInput(
-              name: _nameController.text.trim(),
-              description: _descriptionController.text.trim(),
-              price: int.parse(_priceController.text.trim()),
-              imageUrl: _imageController.text.trim(),
-              category: _category,
-              status: _status,
-              attributes: attributes,
-            );
+            final input = _isEdit
+                ? UpsertProductInput.fromProductEdit(
+                    original: widget.existing!,
+                    name: _nameController.text.trim(),
+                    description: _descriptionController.text.trim(),
+                    price: int.parse(_priceController.text.trim()),
+                    imageUrl: _imageController.text.trim(),
+                    category: _category,
+                    status: _status,
+                    attributes: attributes,
+                  )
+                : UpsertProductInput(
+                    name: _nameController.text.trim(),
+                    description: _descriptionController.text.trim(),
+                    price: int.parse(_priceController.text.trim()),
+                    imageUrl: _imageController.text.trim(),
+                    category: _category,
+                    status: _status,
+                    attributes: attributes,
+                  );
             Navigator.pop(context, input);
           },
           style: ElevatedButton.styleFrom(
@@ -766,7 +806,10 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   Widget _sectionLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF6A3A16)),
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF6A3A16),
+      ),
     );
   }
 
@@ -846,209 +889,3 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
     );
   }
 }
-
-class _ProductManagementMockController extends ChangeNotifier {
-  _ProductManagementMockController({required this.role})
-    : _store = ProductMockStore.instance {
-    _allProducts = _store.products;
-    _store.addListener(_onStoreChanged);
-  }
-
-  final UserRole role;
-  final ProductMockStore _store;
-  late List<Product> _allProducts;
-
-  bool _isLoading = false;
-  String? _errorMessage;
-  bool _includeDeleted = false;
-  String _search = '';
-  ProductCategory? _categoryFilter;
-  ProductStatus? _statusFilter;
-  ProductSortBy _sortBy = ProductSortBy.name;
-  SortDirection _sortDirection = SortDirection.asc;
-
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  bool get includeDeleted => _includeDeleted;
-  String get search => _search;
-  ProductCategory? get categoryFilter => _categoryFilter;
-  ProductStatus? get statusFilter => _statusFilter;
-  ProductSortBy get sortBy => _sortBy;
-  SortDirection get sortDirection => _sortDirection;
-
-  List<Product> get products {
-    final filtered = _allProducts.where((product) {
-      if (_categoryFilter != null && product.category != _categoryFilter) return false;
-      if (_statusFilter != null && product.status != _statusFilter) return false;
-      final trimmed = _search.trim();
-      if (trimmed.length >= 2 && !product.name.toLowerCase().contains(trimmed.toLowerCase())) {
-        return false;
-      }
-      return true;
-    }).toList();
-
-    filtered.sort((a, b) {
-      final result = switch (_sortBy) {
-        ProductSortBy.name => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-        ProductSortBy.price => a.price.compareTo(b.price),
-        ProductSortBy.totalSold => a.totalSold.compareTo(b.totalSold),
-        ProductSortBy.rating => a.rating.compareTo(b.rating),
-      };
-      return _sortDirection == SortDirection.asc ? result : -result;
-    });
-
-    return filtered;
-  }
-
-  Future<void> loadProducts() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  void setSearch(String value) {
-    _search = value;
-    notifyListeners();
-  }
-
-  Future<void> applySearch() async {
-    final text = _search.trim();
-    if (text.isNotEmpty && text.length < 2) {
-      _errorMessage = 'Pencarian minimal 2 karakter sesuai API spec.';
-      notifyListeners();
-      return;
-    }
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> setCategoryFilter(ProductCategory? value) async {
-    _categoryFilter = value;
-    notifyListeners();
-  }
-
-  Future<void> setStatusFilter(ProductStatus? value) async {
-    _statusFilter = value;
-    notifyListeners();
-  }
-
-  Future<void> setSortBy(ProductSortBy value) async {
-    _sortBy = value;
-    notifyListeners();
-  }
-
-  Future<void> setSortDirection(SortDirection value) async {
-    _sortDirection = value;
-    notifyListeners();
-  }
-
-  Future<void> toggleIncludeDeleted(bool value) async {
-    if (role != UserRole.admin && value) {
-      _errorMessage = 'include_deleted hanya untuk Admin (403 FORBIDDEN).';
-      notifyListeners();
-      return;
-    }
-    _includeDeleted = value;
-    notifyListeners();
-  }
-
-  Future<void> clearFilters() async {
-    _search = '';
-    _categoryFilter = null;
-    _statusFilter = null;
-    _sortBy = ProductSortBy.name;
-    _sortDirection = SortDirection.asc;
-    _includeDeleted = false;
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> createProduct(UpsertProductInput input) async {
-    if (role != UserRole.admin) {
-      _errorMessage = 'Hanya Admin yang boleh create product.';
-      notifyListeners();
-      return;
-    }
-
-    await _store.create(input);
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> updateProduct(String id, UpsertProductInput input) async {
-    if (role != UserRole.admin) {
-      _errorMessage = 'Hanya Admin yang boleh update product.';
-      notifyListeners();
-      return;
-    }
-
-    await _store.update(id, input);
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> updateStatus(String id, ProductStatus nextStatus) async {
-    final currentIndex = _allProducts.indexWhere((product) => product.id == id);
-    if (currentIndex == -1) {
-      _errorMessage = 'Produk tidak ditemukan.';
-      notifyListeners();
-      return;
-    }
-
-    final currentStatus = _allProducts[currentIndex].status;
-    if (currentStatus == ProductStatus.unavailable) {
-      _errorMessage = 'Produk unavailable hanya bisa dipulihkan lewat restore Admin.';
-      notifyListeners();
-      return;
-    }
-
-    if (role == UserRole.pegawai && nextStatus == ProductStatus.unavailable) {
-      _errorMessage = 'Pegawai tidak bisa set unavailable (403 FORBIDDEN).';
-      notifyListeners();
-      return;
-    }
-
-    await _store.updateStatus(id, nextStatus);
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> deleteProduct(String id) async {
-    if (role != UserRole.admin) {
-      _errorMessage = 'Hanya Admin yang boleh delete product.';
-      notifyListeners();
-      return;
-    }
-
-    await _store.softDelete(id);
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> restoreProduct(String id) async {
-    if (role != UserRole.admin) {
-      _errorMessage = 'Hanya Admin yang boleh restore product.';
-      notifyListeners();
-      return;
-    }
-
-    await _store.restore(id);
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _store.removeListener(_onStoreChanged);
-    super.dispose();
-  }
-
-  void _onStoreChanged() {
-    _allProducts = _store.products;
-    notifyListeners();
-  }
-}
-

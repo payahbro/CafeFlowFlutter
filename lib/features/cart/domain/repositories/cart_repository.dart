@@ -5,7 +5,10 @@ abstract class CartRepository {
 
   Future<Cart> addItem({required String productId, required int quantity});
 
-  Future<Cart> updateItemQuantity({required String itemId, required int quantity});
+  Future<Cart> updateItemQuantity({
+    required String itemId,
+    required int quantity,
+  });
 
   Future<void> removeItem(String itemId);
 

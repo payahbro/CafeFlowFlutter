@@ -1,5 +1,6 @@
 import 'package:cafe/app/config/app_config.dart';
 import 'package:cafe/core/network/api_client.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/payment/data/datasources/payment_remote_data_source.dart';
 import 'package:cafe/features/payment/data/repositories/payment_repository_impl.dart';
 import 'package:cafe/features/payment/domain/repositories/payment_repository.dart';
@@ -8,8 +9,11 @@ import 'package:cafe/features/payment/domain/usecases/initiate_payment_usecase.d
 import 'package:cafe/features/payment/presentation/cubit/payment_detail_controller.dart';
 
 class PaymentModule {
-  PaymentModule() {
-    final apiClient = ApiClient(baseUrl: AppConfig.paymentBaseUrl);
+  PaymentModule({AuthTokenProvider? authTokenProvider}) {
+    final apiClient = ApiClient(
+      baseUrl: AppConfig.paymentBaseUrl,
+      authTokenProvider: authTokenProvider,
+    );
     final remote = PaymentRemoteDataSourceImpl(apiClient);
     final repository = PaymentRepositoryImpl(remote);
 

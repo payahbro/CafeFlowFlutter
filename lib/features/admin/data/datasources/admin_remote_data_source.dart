@@ -39,8 +39,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<CustomerModel> getCustomerDetail(String userId) async {
     final response = await _apiClient.get('/admin/customers/$userId');
-    final data = response['data'] as Map<String, dynamic>? ??
-        const <String, dynamic>{};
+    final data =
+        response['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     return CustomerModel.fromJson(data);
   }
 
@@ -63,7 +63,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<ProductsReportModel> getProductsReport(ProductsReportQuery query) async {
+  Future<ProductsReportModel> getProductsReport(
+    ProductsReportQuery query,
+  ) async {
     final response = await _apiClient.get(
       '/admin/reports/products',
       queryParameters: query.toQueryParameters(),
@@ -80,8 +82,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
     return ReportExportResult(
       bytes: response.bytes,
-      contentType: response.headers['content-type'] ??
-          'application/octet-stream',
+      contentType:
+          response.headers['content-type'] ?? 'application/octet-stream',
       fileName: _extractFileName(response.headers['content-disposition']),
     );
   }
@@ -91,9 +93,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       return null;
     }
 
-    final match = RegExp('filename="?([^";]+)"?').firstMatch(
-      contentDisposition,
-    );
+    final match = RegExp(
+      'filename="?([^";]+)"?',
+    ).firstMatch(contentDisposition);
     return match?.group(1);
   }
 }

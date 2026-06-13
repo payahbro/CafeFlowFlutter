@@ -20,8 +20,8 @@ class ProductListPageModel {
 
   factory ProductListPageModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as List<dynamic>? ?? <dynamic>[];
-    final pagination = json['pagination'] as Map<String, dynamic>? ??
-        <String, dynamic>{};
+    final pagination =
+        json['pagination'] as Map<String, dynamic>? ?? <String, dynamic>{};
 
     return ProductListPageModel(
       products: data
@@ -49,4 +49,3 @@ class ProductListPageModel {
     );
   }
 }
-

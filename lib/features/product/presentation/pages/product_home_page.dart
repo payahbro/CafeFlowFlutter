@@ -4,10 +4,10 @@ import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/features/cart/presentation/pages/cart_page.dart';
 import 'package:cafe/features/order/presentation/pages/customer_order_list_page.dart';
 import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
-import 'package:cafe/features/product/data/local/product_mock_store.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart';
+import 'package:cafe/features/product/presentation/cubit/product_home_controller.dart';
 import 'package:cafe/features/product/presentation/pages/product_catalog_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_detail_page.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
@@ -37,17 +37,18 @@ class ProductHomePage extends StatefulWidget {
 }
 
 class _ProductHomePageState extends State<ProductHomePage> {
-  ProductMockStore get _store => ProductMockStore.instance;
+  late final ProductHomeController _controller;
 
   @override
   void initState() {
     super.initState();
-    _store.addListener(_onProductsChanged);
+    _controller = ProductHomeController(widget.getProductsUseCase);
+    _controller.loadFeatured();
   }
 
   @override
   void dispose() {
-    _store.removeListener(_onProductsChanged);
+    _controller.dispose();
     super.dispose();
   }
 
@@ -91,7 +92,10 @@ class _ProductHomePageState extends State<ProductHomePage> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildFeaturedProducts(),
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) => _buildFeaturedProducts(),
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -134,7 +138,37 @@ class _ProductHomePageState extends State<ProductHomePage> {
   }
 
   Widget _buildFeaturedProducts() {
-    final featuredProducts = _store.customerProducts.take(8).toList();
+    if (_controller.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_controller.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _controller.errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _controller.loadFeatured,
+                child: const Text('Coba lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final featuredProducts = _controller.products;
     if (featuredProducts.isEmpty) {
       return const Center(child: Text('Belum ada produk'));
     }
@@ -176,17 +210,44 @@ class _ProductHomePageState extends State<ProductHomePage> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(14),
                   ),
-                  child: Image.network(
-                    product.imageUrl,
-                    width: double.infinity,
-                    height: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 140,
-                      color: const Color(0xFFDCDCDC),
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.image_not_supported),
-                    ),
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        product.imageUrl,
+                        width: double.infinity,
+                        height: 140,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          height: 140,
+                          color: const Color(0xFFDCDCDC),
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.image_not_supported),
+                        ),
+                      ),
+                      if (product.status == ProductStatus.outOfStock)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xE61A0702),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              product.status.label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 Padding(
@@ -355,16 +416,10 @@ class _ProductHomePageState extends State<ProductHomePage> {
           getProductsUseCase: widget.getProductsUseCase,
           getProductDetailUseCase: widget.getProductDetailUseCase,
           addCartItemUseCase: widget.cartModule.addCartItemUseCase,
-          mockProducts: _store.customerProducts,
           initialCategory: category,
         ),
       ),
     );
-  }
-
-  void _onProductsChanged() {
-    if (!mounted) return;
-    setState(() {});
   }
 
   void _openCart(BuildContext context) {

@@ -1,10 +1,7 @@
 import 'package:cafe/features/admin/domain/entities/report_period.dart';
 
 class ProductsReport {
-  const ProductsReport({
-    required this.period,
-    required this.rows,
-  });
+  const ProductsReport({required this.period, required this.rows});
 
   final ReportPeriod period;
   final List<ProductsReportRow> rows;

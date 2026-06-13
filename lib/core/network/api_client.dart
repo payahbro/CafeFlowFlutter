@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cafe/core/errors/app_exception.dart';
+import 'package:cafe/core/network/auth_token_provider.dart';
 
 class ApiRawResponse {
   const ApiRawResponse({
@@ -16,11 +17,16 @@ class ApiRawResponse {
 }
 
 class ApiClient {
-  ApiClient({required this.baseUrl, HttpClient? client})
-    : _client = client ?? HttpClient();
+  ApiClient({
+    required this.baseUrl,
+    HttpClient? client,
+    AuthTokenProvider? authTokenProvider,
+  }) : _client = client ?? HttpClient(),
+       _authTokenProvider = authTokenProvider;
 
   final String baseUrl;
   final HttpClient _client;
+  final AuthTokenProvider? _authTokenProvider;
 
   Future<Map<String, dynamic>> get(
     String path, {
@@ -116,17 +122,19 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(
-      queryParameters: queryParameters == null
-          ? null
-          : queryParameters.map(
-              (key, value) => MapEntry(key, value.toString()),
-            ),
+      queryParameters: queryParameters?.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
     );
 
     HttpClientRequest request;
     try {
       request = await _client.openUrl(method, uri);
       request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      final token = _authTokenProvider?.call();
+      if (token != null && token.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      }
       headers?.forEach(request.headers.set);
 
       if (body != null) {
@@ -151,6 +159,13 @@ class ApiClient {
           statusCode: response.statusCode,
         );
       }
+      if (errorObject is String) {
+        throw AppException(
+          decoded['error_description'] as String? ?? errorObject,
+          code: errorObject,
+          statusCode: response.statusCode,
+        );
+      }
 
       throw AppException(
         'Request failed with status ${response.statusCode}',
@@ -169,17 +184,19 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(
-      queryParameters: queryParameters == null
-          ? null
-          : queryParameters.map(
-              (key, value) => MapEntry(key, value.toString()),
-            ),
+      queryParameters: queryParameters?.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
     );
 
     HttpClientRequest request;
     try {
       request = await _client.openUrl(method, uri);
       request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      final token = _authTokenProvider?.call();
+      if (token != null && token.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      }
       headers?.forEach(request.headers.set);
 
       if (body != null) {
@@ -205,6 +222,13 @@ class ApiClient {
         throw AppException(
           (errorObject['message'] as String?) ?? 'Request failed',
           code: errorObject['code'] as String?,
+          statusCode: response.statusCode,
+        );
+      }
+      if (errorObject is String) {
+        throw AppException(
+          decoded['error_description'] as String? ?? errorObject,
+          code: errorObject,
           statusCode: response.statusCode,
         );
       }

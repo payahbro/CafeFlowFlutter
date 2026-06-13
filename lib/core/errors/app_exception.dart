@@ -10,4 +10,3 @@ class AppException implements Exception {
     return 'AppException(code: $code, statusCode: $statusCode, message: $message)';
   }
 }
-

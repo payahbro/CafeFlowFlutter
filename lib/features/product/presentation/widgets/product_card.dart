@@ -1,4 +1,5 @@
 import 'package:cafe/features/product/domain/entities/product.dart';
+import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasCoffeeOptions = product.attributes.temperature.isNotEmpty;
+    final canBeOrdered = product.status.canBeOrdered;
 
     return InkWell(
       onTap: onTap,
@@ -36,7 +38,7 @@ class ProductCard extends StatelessWidget {
                 height: 100,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   height: 100,
                   color: const Color(0xFF3F2A1D),
                   alignment: Alignment.center,
@@ -57,9 +59,13 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              hasCoffeeOptions ? 'Hot / Iced' : 'Ready to order',
-              style: const TextStyle(
-                color: Color(0xFFE19C2D),
+              canBeOrdered
+                  ? (hasCoffeeOptions ? 'Hot / Iced' : 'Ready to order')
+                  : product.status.label,
+              style: TextStyle(
+                color: canBeOrdered
+                    ? const Color(0xFFE19C2D)
+                    : const Color(0xFFFFD5A3),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -78,15 +84,20 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
                 InkWell(
-                  onTap: onAdd,
+                  onTap: canBeOrdered ? onAdd : null,
                   child: Container(
                     height: 40,
                     width: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDA8A11),
+                      color: canBeOrdered
+                          ? const Color(0xFFDA8A11)
+                          : const Color(0xFF6E625B),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(Icons.add_shopping_cart, color: Colors.white),
+                    child: const Icon(
+                      Icons.add_shopping_cart,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -97,4 +108,3 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-

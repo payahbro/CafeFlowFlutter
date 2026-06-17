@@ -1,6 +1,7 @@
 import 'package:cafe/core/network/api_client.dart';
 import 'package:cafe/features/admin/data/models/customer_list_page_model.dart';
 import 'package:cafe/features/admin/data/models/customer_model.dart';
+import 'package:cafe/features/admin/data/models/dashboard_report_models.dart';
 import 'package:cafe/features/admin/data/models/report_orders_model.dart';
 import 'package:cafe/features/admin/data/models/report_products_model.dart';
 import 'package:cafe/features/admin/data/models/report_summary_model.dart';
@@ -12,6 +13,12 @@ abstract class AdminRemoteDataSource {
   Future<CustomerListPageModel> getCustomers(CustomerQuery query);
 
   Future<CustomerModel> getCustomerDetail(String userId);
+
+  Future<RevenueReportModel> getRevenueReport(ReportSummaryQuery query);
+
+  Future<ProductsSoldSummaryModel> getProductsSoldReport(
+    ReportSummaryQuery query,
+  );
 
   Future<ReportSummaryModel> getReportSummary(ReportSummaryQuery query);
 
@@ -42,6 +49,26 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     final data =
         response['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     return CustomerModel.fromJson(data);
+  }
+
+  @override
+  Future<RevenueReportModel> getRevenueReport(ReportSummaryQuery query) async {
+    final response = await _apiClient.get(
+      '/reports/revenue',
+      queryParameters: query.toQueryParameters(),
+    );
+    return RevenueReportModel.fromJson(response);
+  }
+
+  @override
+  Future<ProductsSoldSummaryModel> getProductsSoldReport(
+    ReportSummaryQuery query,
+  ) async {
+    final response = await _apiClient.get(
+      '/reports/products-sold',
+      queryParameters: query.toQueryParameters(),
+    );
+    return ProductsSoldSummaryModel.fromJson(response);
   }
 
   @override

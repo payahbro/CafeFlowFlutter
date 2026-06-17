@@ -1,10 +1,13 @@
 import 'package:cafe/core/network/api_client.dart';
 import 'package:cafe/features/payment/data/models/payment_models.dart';
+import 'package:cafe/features/payment/domain/entities/payment_query.dart';
 
 abstract class PaymentRemoteDataSource {
   Future<PaymentInitiationModel> initiatePayment({required String orderId});
 
   Future<PaymentDetailModel> getPaymentByOrder({required String orderId});
+
+  Future<PaymentListPageModel> getPayments(PaymentQuery query);
 }
 
 class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
@@ -35,5 +38,14 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     final data =
         response['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
     return PaymentDetailModel.fromJson(data);
+  }
+
+  @override
+  Future<PaymentListPageModel> getPayments(PaymentQuery query) async {
+    final response = await _apiClient.get(
+      '/payments',
+      queryParameters: query.toQueryParameters(),
+    );
+    return PaymentListPageModel.fromJson(response);
   }
 }

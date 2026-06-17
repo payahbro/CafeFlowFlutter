@@ -5,8 +5,10 @@ import 'package:cafe/features/payment/data/datasources/payment_remote_data_sourc
 import 'package:cafe/features/payment/data/repositories/payment_repository_impl.dart';
 import 'package:cafe/features/payment/domain/repositories/payment_repository.dart';
 import 'package:cafe/features/payment/domain/usecases/get_payment_by_order_usecase.dart';
+import 'package:cafe/features/payment/domain/usecases/get_payments_usecase.dart';
 import 'package:cafe/features/payment/domain/usecases/initiate_payment_usecase.dart';
 import 'package:cafe/features/payment/presentation/cubit/payment_detail_controller.dart';
+import 'package:cafe/features/payment/presentation/cubit/payment_management_controller.dart';
 
 class PaymentModule {
   PaymentModule({AuthTokenProvider? authTokenProvider}) {
@@ -20,16 +22,22 @@ class PaymentModule {
     paymentRepository = repository;
     initiatePaymentUseCase = InitiatePaymentUseCase(repository);
     getPaymentByOrderUseCase = GetPaymentByOrderUseCase(repository);
+    getPaymentsUseCase = GetPaymentsUseCase(repository);
   }
 
   late final PaymentRepository paymentRepository;
   late final InitiatePaymentUseCase initiatePaymentUseCase;
   late final GetPaymentByOrderUseCase getPaymentByOrderUseCase;
+  late final GetPaymentsUseCase getPaymentsUseCase;
 
   PaymentDetailController createPaymentDetailController() {
     return PaymentDetailController(
       initiatePaymentUseCase: initiatePaymentUseCase,
       getPaymentByOrderUseCase: getPaymentByOrderUseCase,
     );
+  }
+
+  PaymentManagementController createPaymentManagementController() {
+    return PaymentManagementController(getPaymentsUseCase: getPaymentsUseCase);
   }
 }

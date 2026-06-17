@@ -1,6 +1,8 @@
 import 'package:cafe/features/payment/data/datasources/payment_remote_data_source.dart';
 import 'package:cafe/features/payment/domain/entities/payment_detail.dart';
 import 'package:cafe/features/payment/domain/entities/payment_initiation.dart';
+import 'package:cafe/features/payment/domain/entities/payment_list_page.dart';
+import 'package:cafe/features/payment/domain/entities/payment_query.dart';
 import 'package:cafe/features/payment/domain/repositories/payment_repository.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
@@ -17,6 +19,12 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<PaymentDetail> getPaymentByOrder({required String orderId}) async {
     final model = await _remoteDataSource.getPaymentByOrder(orderId: orderId);
+    return model.toEntity();
+  }
+
+  @override
+  Future<PaymentListPage> getPayments(PaymentQuery query) async {
+    final model = await _remoteDataSource.getPayments(query);
     return model.toEntity();
   }
 }

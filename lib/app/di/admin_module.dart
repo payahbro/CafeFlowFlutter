@@ -7,9 +7,12 @@ import 'package:cafe/features/admin/domain/usecases/export_report_usecase.dart';
 import 'package:cafe/features/admin/domain/usecases/get_customer_detail_usecase.dart';
 import 'package:cafe/features/admin/domain/usecases/get_customers_usecase.dart';
 import 'package:cafe/features/admin/domain/usecases/get_orders_report_usecase.dart';
+import 'package:cafe/features/admin/domain/usecases/get_products_sold_report_usecase.dart';
 import 'package:cafe/features/admin/domain/usecases/get_products_report_usecase.dart';
 import 'package:cafe/features/admin/domain/usecases/get_report_summary_usecase.dart';
+import 'package:cafe/features/admin/domain/usecases/get_revenue_report_usecase.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_customer_controller.dart';
+import 'package:cafe/features/admin/presentation/cubit/admin_dashboard_controller.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_reporting_controller.dart';
 
 class AdminModule {
@@ -23,6 +26,8 @@ class AdminModule {
 
     getCustomersUseCase = GetCustomersUseCase(repository);
     getCustomerDetailUseCase = GetCustomerDetailUseCase(repository);
+    getRevenueReportUseCase = GetRevenueReportUseCase(repository);
+    getProductsSoldReportUseCase = GetProductsSoldReportUseCase(repository);
     getReportSummaryUseCase = GetReportSummaryUseCase(repository);
     getOrdersReportUseCase = GetOrdersReportUseCase(repository);
     getProductsReportUseCase = GetProductsReportUseCase(repository);
@@ -31,6 +36,8 @@ class AdminModule {
 
   late final GetCustomersUseCase getCustomersUseCase;
   late final GetCustomerDetailUseCase getCustomerDetailUseCase;
+  late final GetRevenueReportUseCase getRevenueReportUseCase;
+  late final GetProductsSoldReportUseCase getProductsSoldReportUseCase;
   late final GetReportSummaryUseCase getReportSummaryUseCase;
   late final GetOrdersReportUseCase getOrdersReportUseCase;
   late final GetProductsReportUseCase getProductsReportUseCase;
@@ -40,6 +47,13 @@ class AdminModule {
     return AdminCustomerController(
       getCustomersUseCase: getCustomersUseCase,
       getCustomerDetailUseCase: getCustomerDetailUseCase,
+    );
+  }
+
+  AdminDashboardController createDashboardController() {
+    return AdminDashboardController(
+      getRevenueReportUseCase: getRevenueReportUseCase,
+      getProductsSoldReportUseCase: getProductsSoldReportUseCase,
     );
   }
 

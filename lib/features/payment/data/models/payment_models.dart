@@ -1,5 +1,7 @@
 import 'package:cafe/features/payment/domain/entities/payment_detail.dart';
 import 'package:cafe/features/payment/domain/entities/payment_initiation.dart';
+import 'package:cafe/features/payment/domain/entities/payment_list_item.dart';
+import 'package:cafe/features/payment/domain/entities/payment_list_page.dart';
 import 'package:cafe/features/payment/domain/entities/payment_status.dart';
 
 class PaymentInitiationModel {
@@ -129,5 +131,105 @@ class PaymentDetailModel {
     }
 
     return DateTime.tryParse('$value')?.toLocal();
+  }
+}
+
+class PaymentListItemModel {
+  const PaymentListItemModel({
+    required this.paymentId,
+    required this.orderId,
+    required this.orderNumber,
+    required this.status,
+    required this.amount,
+    required this.paymentMethod,
+    required this.midtransTransactionId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  final String paymentId;
+  final String orderId;
+  final String orderNumber;
+  final PaymentStatus status;
+  final int amount;
+  final String? paymentMethod;
+  final String? midtransTransactionId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  factory PaymentListItemModel.fromJson(Map<String, dynamic> json) {
+    return PaymentListItemModel(
+      paymentId: json['payment_id'] as String? ?? '',
+      orderId: json['order_id'] as String? ?? '',
+      orderNumber: json['order_number'] as String? ?? '-',
+      status: PaymentStatusX.fromApiValue(json['status'] as String? ?? ''),
+      amount: PaymentDetailModel._intFromJson(json['amount']),
+      paymentMethod: json['payment_method'] as String?,
+      midtransTransactionId: json['midtrans_transaction_id'] as String?,
+      createdAt: PaymentDetailModel._dateFromJson(json['created_at']),
+      updatedAt: PaymentDetailModel._dateFromJson(json['updated_at']),
+    );
+  }
+
+  PaymentListItem toEntity() {
+    return PaymentListItem(
+      paymentId: paymentId,
+      orderId: orderId,
+      orderNumber: orderNumber,
+      status: status,
+      amount: amount,
+      paymentMethod: paymentMethod,
+      midtransTransactionId: midtransTransactionId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}
+
+class PaymentListPageModel {
+  const PaymentListPageModel({
+    required this.data,
+    required this.nextCursor,
+    required this.prevCursor,
+    required this.limit,
+    required this.hasNext,
+    required this.hasPrev,
+  });
+
+  final List<PaymentListItemModel> data;
+  final String? nextCursor;
+  final String? prevCursor;
+  final int limit;
+  final bool hasNext;
+  final bool hasPrev;
+
+  factory PaymentListPageModel.fromJson(Map<String, dynamic> json) {
+    final dataJson = json['data'] as List<dynamic>? ?? const <dynamic>[];
+    final pagination =
+        json['pagination'] as Map<String, dynamic>? ??
+        const <String, dynamic>{};
+
+    return PaymentListPageModel(
+      data: dataJson
+          .whereType<Map<String, dynamic>>()
+          .map(PaymentListItemModel.fromJson)
+          .toList(),
+      nextCursor: pagination['next_cursor'] as String?,
+      prevCursor: pagination['prev_cursor'] as String?,
+      limit: PaymentDetailModel._intFromJson(pagination['limit'], fallback: 10),
+      hasNext: pagination['has_next'] as bool? ?? false,
+      hasPrev: pagination['has_prev'] as bool? ?? false,
+    );
+  }
+
+  PaymentListPage toEntity() {
+    return PaymentListPage(
+      data: data.map((item) => item.toEntity()).toList(),
+      nextCursor: nextCursor,
+      prevCursor: prevCursor,
+      limit: limit,
+      hasNext: hasNext,
+      hasPrev: hasPrev,
+    );
   }
 }

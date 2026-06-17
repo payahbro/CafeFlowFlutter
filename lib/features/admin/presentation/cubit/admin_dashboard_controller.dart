@@ -1,16 +1,31 @@
+import 'package:cafe/features/admin/domain/entities/report_queries.dart';
+import 'package:cafe/features/admin/domain/usecases/get_products_sold_report_usecase.dart';
+import 'package:cafe/features/admin/domain/usecases/get_revenue_report_usecase.dart';
+import 'package:cafe/features/admin/presentation/cubit/admin_error_mapper.dart';
 import 'package:flutter/foundation.dart';
 
 class AdminDashboardSummary {
   const AdminDashboardSummary({
-    required this.totalOrdersToday,
-    required this.activeConfirmedOrders,
+    required this.totalRevenue,
+    required this.currency,
+    required this.totalProductsSold,
   });
 
-  final int totalOrdersToday;
-  final int activeConfirmedOrders;
+  final int totalRevenue;
+  final String currency;
+  final int totalProductsSold;
 }
 
 class AdminDashboardController extends ChangeNotifier {
+  AdminDashboardController({
+    required GetRevenueReportUseCase getRevenueReportUseCase,
+    required GetProductsSoldReportUseCase getProductsSoldReportUseCase,
+  }) : _getRevenueReportUseCase = getRevenueReportUseCase,
+       _getProductsSoldReportUseCase = getProductsSoldReportUseCase;
+
+  final GetRevenueReportUseCase _getRevenueReportUseCase;
+  final GetProductsSoldReportUseCase _getProductsSoldReportUseCase;
+
   bool _isLoading = false;
   String? _errorMessage;
   AdminDashboardSummary? _summary;
@@ -25,17 +40,28 @@ class AdminDashboardController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: replace with GET /api/v1/admin/reports/summary.
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      _summary = const AdminDashboardSummary(
-        totalOrdersToday: 52,
-        activeConfirmedOrders: 14,
+      final query = ReportSummaryQuery(
+        dateFrom: _startOfToday(),
+        dateTo: DateTime.now(),
+      );
+      final revenue = await _getRevenueReportUseCase(query);
+      final productsSold = await _getProductsSoldReportUseCase(query);
+
+      _summary = AdminDashboardSummary(
+        totalRevenue: revenue.totalRevenue,
+        currency: revenue.currency,
+        totalProductsSold: productsSold.totalProductsSold,
       );
     } catch (error) {
-      _errorMessage = '$error';
+      _errorMessage = mapAdminError(error);
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  DateTime _startOfToday() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
   }
 }

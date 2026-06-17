@@ -46,6 +46,7 @@ class AppShellPage extends StatelessWidget {
       role: role,
       productModule: productModule,
       orderModule: orderModule,
+      paymentModule: paymentModule,
       adminModule: adminModule,
       sessionController: sessionController,
     );

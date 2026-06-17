@@ -2,6 +2,7 @@ import 'package:cafe/features/admin/data/datasources/admin_remote_data_source.da
 import 'package:cafe/features/admin/domain/entities/customer.dart';
 import 'package:cafe/features/admin/domain/entities/customer_list_page.dart';
 import 'package:cafe/features/admin/domain/entities/customer_query.dart';
+import 'package:cafe/features/admin/domain/entities/dashboard_reports.dart';
 import 'package:cafe/features/admin/domain/entities/report_export_result.dart';
 import 'package:cafe/features/admin/domain/entities/report_orders.dart';
 import 'package:cafe/features/admin/domain/entities/report_products.dart';
@@ -23,6 +24,20 @@ class AdminRepositoryImpl implements AdminRepository {
   @override
   Future<Customer> getCustomerDetail(String userId) async {
     final model = await _remoteDataSource.getCustomerDetail(userId);
+    return model.toEntity();
+  }
+
+  @override
+  Future<RevenueReport> getRevenueReport(ReportSummaryQuery query) async {
+    final model = await _remoteDataSource.getRevenueReport(query);
+    return model.toEntity();
+  }
+
+  @override
+  Future<ProductsSoldSummary> getProductsSoldReport(
+    ReportSummaryQuery query,
+  ) async {
+    final model = await _remoteDataSource.getProductsSoldReport(query);
     return model.toEntity();
   }
 

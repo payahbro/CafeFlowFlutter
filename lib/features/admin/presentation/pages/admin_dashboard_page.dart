@@ -1,13 +1,14 @@
 import 'package:cafe/app/di/admin_module.dart';
 import 'package:cafe/app/di/order_module.dart';
+import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/features/admin/presentation/cubit/admin_dashboard_controller.dart';
 import 'package:cafe/features/admin/presentation/pages/admin_customer_management_page.dart';
-import 'package:cafe/features/admin/presentation/pages/admin_reporting_page.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/presentation/pages/admin_order_management_page.dart';
 import 'package:cafe/features/order/presentation/pages/employee_order_queue_page.dart';
 import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
+import 'package:cafe/features/payment/presentation/pages/admin_payment_management_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_management_page.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:cafe/shared/services/session_controller.dart';
@@ -19,6 +20,7 @@ class AdminDashboardPage extends StatefulWidget {
     required this.role,
     required this.productModule,
     required this.orderModule,
+    required this.paymentModule,
     required this.adminModule,
     required this.sessionController,
   });
@@ -26,6 +28,7 @@ class AdminDashboardPage extends StatefulWidget {
   final UserRole role;
   final ProductModule productModule;
   final OrderModule orderModule;
+  final PaymentModule paymentModule;
   final AdminModule adminModule;
   final SessionController sessionController;
 
@@ -40,7 +43,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   void initState() {
     super.initState();
-    _controller = AdminDashboardController();
+    _controller = widget.adminModule.createDashboardController();
     _controller.loadSummaryLimited();
   }
 
@@ -77,16 +80,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.role == UserRole.admin
-                              ? 'Ringkasan operasional hari ini untuk Admin.'
-                              : 'Ringkasan operasional hari ini untuk Pegawai.',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF5A4D45),
-                          ),
-                        ),
                         const SizedBox(height: 16),
                         if (_controller.errorMessage != null)
                           Container(
@@ -100,28 +93,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ),
                           ),
                         _SummaryCard(
-                          title: 'Total Orders Today',
-                          value: '${summary?.totalOrdersToday ?? 0}',
-                          subtitle: 'Order yang dibuat hari ini',
-                          icon: Icons.receipt_long_rounded,
+                          title: 'Total Revenue',
+                          value: _formatRupiah(summary?.totalRevenue ?? 0),
+                          subtitle: 'Pendapatan pembayaran berhasil hari ini',
+                          icon: Icons.payments_rounded,
                         ),
                         const SizedBox(height: 10),
                         _SummaryCard(
-                          title: 'Active Confirmed Orders',
-                          value: '${summary?.activeConfirmedOrders ?? 0}',
-                          subtitle: 'Order aktif yang masih perlu ditangani',
-                          icon: Icons.timelapse_rounded,
+                          title: 'Total Product Sold',
+                          value: '${summary?.totalProductsSold ?? 0}',
+                          subtitle: 'Produk terjual hari ini',
+                          icon: Icons.inventory_rounded,
                           emphasize: true,
                         ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Quick Access',
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 18),
                         GridView.count(
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
@@ -147,9 +132,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               isEnabled: widget.role == UserRole.admin,
                             ),
                             _QuickAccessCard(
-                              title: 'Reporting',
-                              icon: Icons.bar_chart_rounded,
-                              onTap: _openReporting,
+                              title: 'Payment\nManagement',
+                              icon: Icons.payments_rounded,
+                              onTap: _openPaymentManagement,
                               isEnabled: widget.role == UserRole.admin,
                             ),
                           ],
@@ -179,7 +164,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
           final section = switch (index) {
             2 => 'Customer Management',
-            3 => 'Reporting',
+            3 => 'Payment Management',
             _ => 'Order Management',
           };
           if (widget.role != UserRole.admin) {
@@ -193,7 +178,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           }
 
           if (index == 3) {
-            _openReporting();
+            _openPaymentManagement();
             return;
           }
         },
@@ -213,8 +198,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             label: 'Customers',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_rounded),
-            label: 'Reports',
+            icon: Icon(Icons.payments_rounded),
+            label: 'Payments',
           ),
         ],
       ),
@@ -336,16 +321,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  void _openReporting() {
+  void _openPaymentManagement() {
     if (widget.role != UserRole.admin) {
-      _showRestricted('Reporting');
+      _showRestricted('Payment Management');
       return;
     }
 
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => AdminReportingPage(
-          controller: widget.adminModule.createReportingController(),
+        builder: (_) => AdminPaymentManagementPage(
+          controller: widget.paymentModule.createPaymentManagementController(),
         ),
       ),
     );
@@ -355,6 +340,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('$section hanya untuk Admin.')));
+  }
+
+  String _formatRupiah(int value) {
+    final raw = value.toString();
+    final buffer = StringBuffer();
+
+    for (var index = 0; index < raw.length; index++) {
+      final reverseIndex = raw.length - index;
+      buffer.write(raw[index]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return 'Rp ${buffer.toString()}';
   }
 }
 

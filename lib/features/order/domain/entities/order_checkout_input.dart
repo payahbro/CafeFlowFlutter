@@ -16,13 +16,19 @@ class OrderCheckoutItemInput {
 }
 
 class OrderCheckoutInput {
-  const OrderCheckoutInput({this.notes, required this.items});
+  const OrderCheckoutInput({
+    required this.tableNumber,
+    this.notes,
+    required this.items,
+  });
 
+  final String tableNumber;
   final String? notes;
   final List<OrderCheckoutItemInput> items;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'table_number': tableNumber.trim(),
       if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       'items': items.map((item) => item.toJson()).toList(),
     };

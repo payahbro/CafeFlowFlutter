@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/presentation/cubit/order_detail_controller.dart';
@@ -550,6 +552,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             totalAmount: order.totalAmount,
             itemsCount: order.items.length,
             expiresAt: order.effectiveExpiresAt,
+            onViewOrder: _handleViewOrderFromPayment,
           ),
         ),
       );
@@ -609,6 +612,15 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(SnackBar(content: Text(mapOrderError(error))));
     }
+  }
+
+  void _handleViewOrderFromPayment(String _) {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pop();
+    unawaited(_controller.refresh(silent: false));
   }
 
   Future<void> _showPaymentLinkDialog(String paymentUrl) async {

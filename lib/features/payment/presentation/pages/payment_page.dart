@@ -36,6 +36,7 @@ class _PaymentPageState extends State<PaymentPage> {
   static const double _contentMaxWidth = 860;
 
   late final PaymentDetailController _controller;
+  bool _hasOpenedPaymentGateway = false;
 
   @override
   void initState() {
@@ -88,6 +89,8 @@ class _PaymentPageState extends State<PaymentPage> {
               return _buildResponsiveBody(_buildErrorState(state));
             }
 
+            _openPaymentGatewayWhenReady(state);
+
             return _buildResponsiveBody(
               Column(
                 children: [
@@ -104,16 +107,12 @@ class _PaymentPageState extends State<PaymentPage> {
                             _InlineErrorBanner(message: state.errorMessage!),
                           _buildSummaryCard(state),
                           const SizedBox(height: 12),
-                          _buildMethodSection(state),
-                          const SizedBox(height: 12),
-                          _buildStatusSection(state),
-                          const SizedBox(height: 12),
-                          _buildSecurityNote(),
+                          _buildPaymentResultCard(state),
                         ],
                       ),
                     ),
                   ),
-                  _buildBottomActionBar(state),
+                  _buildBottomActionBar(),
                 ],
               ),
             );
@@ -139,9 +138,6 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildErrorState(PaymentDetailState state) {
-    final canRetry = _shouldShowRetry(state.errorCode);
-    final canViewOrder = widget.onViewOrder != null;
-
     return Padding(
       padding: const EdgeInsets.all(OrderUiTokens.s24),
       child: Column(
@@ -180,35 +176,14 @@ class _PaymentPageState extends State<PaymentPage> {
             ),
           ),
           const SizedBox(height: 16),
-          if (canRetry)
-            SizedBox(
-              width: 220,
-              child: ElevatedButton.icon(
-                onPressed: _handleRetry,
-                style: OrderUiTokens.primaryButtonStyle(),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Coba Lagi'),
-              ),
+          SizedBox(
+            width: 260,
+            child: ElevatedButton(
+              onPressed: _handleViewOrder,
+              style: OrderUiTokens.primaryButtonStyle(),
+              child: const Text('Kembali ke Pesanan Saya'),
             ),
-          if (canRetry && canViewOrder) const SizedBox(height: 10),
-          if (canViewOrder)
-            SizedBox(
-              width: 220,
-              child: OutlinedButton(
-                onPressed: _handleViewOrder,
-                style: OrderUiTokens.secondaryOutlinedStyle(),
-                child: const Text('Lihat Pesanan'),
-              ),
-            ),
-          if (!canRetry && !canViewOrder)
-            SizedBox(
-              width: 220,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                style: OrderUiTokens.secondaryOutlinedStyle(),
-                child: const Text('Kembali'),
-              ),
-            ),
+          ),
         ],
       ),
     );
@@ -269,7 +244,9 @@ class _PaymentPageState extends State<PaymentPage> {
               fontSize: 22,
             ),
           ),
-          if (state.expiresAt != null) ...[
+          if (state.expiresAt != null &&
+              status != PaymentStatus.success &&
+              status != PaymentStatus.refunded) ...[
             const SizedBox(height: 10),
             ExpiryCountdownChip(expiresAt: state.expiresAt, now: state.now),
           ],
@@ -278,119 +255,61 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _buildMethodSection(PaymentDetailState state) {
+  Widget _buildPaymentResultCard(PaymentDetailState state) {
+    final presentation = _paymentPresentation(state);
+
     return Container(
-      padding: const EdgeInsets.all(OrderUiTokens.s16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
       decoration: BoxDecoration(
         color: OrderUiTokens.cardSurface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: OrderUiTokens.border),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Pilih Metode Pembayaran',
-            style: TextStyle(
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: presentation.background,
+              shape: BoxShape.circle,
+              border: Border.all(color: presentation.border),
+            ),
+            child: Icon(
+              presentation.icon,
+              color: presentation.foreground,
+              size: 38,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            presentation.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               color: OrderUiTokens.primaryText,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
             ),
-          ),
-          const SizedBox(height: 10),
-          for (final option in _paymentMethodOptions) ...[
-            _PaymentMethodCard(
-              option: option,
-              isSelected: option.key == state.selectedMethodKey,
-              onTap: () => _controller.selectMethod(option.key),
-            ),
-            if (option != _paymentMethodOptions.last)
-              const SizedBox(height: 10),
-          ],
-          const SizedBox(height: 10),
-          const Text(
-            'Metode akhir tetap dipilih di halaman Midtrans.',
-            style: TextStyle(color: OrderUiTokens.mutedText, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusSection(PaymentDetailState state) {
-    final detail = state.paymentDetail;
-    final status = detail?.status;
-    final statusLabel = status?.label ?? 'Menyiapkan status pembayaran';
-    final statusMessage = _statusMessage(status);
-
-    return Container(
-      padding: const EdgeInsets.all(OrderUiTokens.s16),
-      decoration: BoxDecoration(
-        color: OrderUiTokens.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: OrderUiTokens.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  statusLabel,
-                  style: const TextStyle(
-                    color: OrderUiTokens.primaryText,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              if (state.isRefreshing)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-            ],
           ),
           const SizedBox(height: 8),
           Text(
-            statusMessage,
+            presentation.message,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: OrderUiTokens.mutedText,
-              fontSize: 13,
-              height: 1.4,
+              fontSize: 14,
+              height: 1.45,
             ),
           ),
-          if (detail?.paymentMethod != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Metode: ${detail?.paymentMethod}',
-              style: const TextStyle(
-                color: OrderUiTokens.primaryText,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ],
-          if (detail?.midtransTransactionId != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              'ID Transaksi: ${detail?.midtransTransactionId}',
-              style: const TextStyle(
-                color: OrderUiTokens.mutedText,
-                fontSize: 12,
-              ),
-            ),
-          ],
-          if (detail?.status == PaymentStatus.refunded &&
-              detail?.refundAmount != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Refund: ${formatRupiah(detail!.refundAmount!)}',
-              style: const TextStyle(
-                color: OrderUiTokens.primaryText,
-                fontWeight: FontWeight.w700,
+          if (state.isInitiating || state.isRefreshing) ...[
+            const SizedBox(height: 18),
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                color: presentation.foreground,
+                strokeWidth: 2.4,
               ),
             ),
           ],
@@ -399,73 +318,7 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _buildSecurityNote() {
-    return Container(
-      padding: const EdgeInsets.all(OrderUiTokens.s16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF0DA),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5C8A0)),
-      ),
-      child: Row(
-        children: const [
-          Icon(Icons.lock_outline_rounded, color: Color(0xFF6A3A16)),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Pembayaran diproses aman melalui Midtrans.',
-              style: TextStyle(
-                color: OrderUiTokens.primaryText,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomActionBar(PaymentDetailState state) {
-    final status = state.paymentDetail?.status;
-    final paymentUrl =
-        state.initiation?.snapRedirectUrl ??
-        state.paymentDetail?.snapRedirectUrl;
-    final canPay =
-        paymentUrl != null &&
-        paymentUrl.trim().isNotEmpty &&
-        !state.isInitiating;
-    final isFailed =
-        status == PaymentStatus.failed || status == PaymentStatus.expired;
-    final isSuccess = status == PaymentStatus.success;
-    final isRefunded = status == PaymentStatus.refunded;
-
-    String primaryLabel;
-    VoidCallback? primaryAction;
-
-    if (state.isInitiating) {
-      primaryLabel = 'Menyiapkan pembayaran...';
-      primaryAction = null;
-    } else if (isFailed) {
-      primaryLabel = 'Coba Lagi';
-      primaryAction = _handleRetry;
-    } else if (isSuccess || isRefunded) {
-      primaryLabel = 'Lihat Pesanan';
-      primaryAction = _handleViewOrder;
-    } else {
-      primaryLabel = 'Bayar Sekarang';
-      primaryAction = canPay ? _handlePayNow : null;
-    }
-
-    final showSecondary =
-        !(isSuccess || isRefunded) || widget.onViewOrder != null;
-    final secondaryLabel = (isSuccess || isRefunded)
-        ? 'Kembali'
-        : 'Lihat Pesanan';
-    final secondaryAction = (isSuccess || isRefunded)
-        ? () => Navigator.of(context).maybePop()
-        : _handleViewOrder;
-
+  Widget _buildBottomActionBar() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -473,47 +326,45 @@ class _PaymentPageState extends State<PaymentPage> {
         color: OrderUiTokens.cardSurface,
         border: Border(top: BorderSide(color: OrderUiTokens.border)),
       ),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: primaryAction,
-              style: OrderUiTokens.primaryButtonStyle(),
-              child: Text(primaryLabel),
-            ),
-          ),
-          if (showSecondary) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: secondaryAction,
-                style: OrderUiTokens.secondaryOutlinedStyle(),
-                child: Text(secondaryLabel),
-              ),
-            ),
-          ],
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _handleViewOrder,
+          style: OrderUiTokens.primaryButtonStyle(),
+          child: const Text('Kembali ke Pesanan Saya'),
+        ),
       ),
     );
   }
 
-  Future<void> _handlePayNow() async {
-    final paymentUrl =
-        _controller.state.initiation?.snapRedirectUrl ??
-        _controller.state.paymentDetail?.snapRedirectUrl;
-    final messenger = ScaffoldMessenger.of(context);
-
-    if (paymentUrl == null || paymentUrl.trim().isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('URL pembayaran belum tersedia. Coba lagi nanti.'),
-        ),
-      );
+  void _openPaymentGatewayWhenReady(PaymentDetailState state) {
+    if (_hasOpenedPaymentGateway || state.isLoading || state.isInitiating) {
       return;
     }
 
+    final status = state.paymentDetail?.status;
+    if (status != null && status.isFinal) {
+      return;
+    }
+
+    final paymentUrl =
+        state.initiation?.snapRedirectUrl ??
+        state.paymentDetail?.snapRedirectUrl;
+    if (paymentUrl == null || paymentUrl.trim().isEmpty) {
+      return;
+    }
+
+    _hasOpenedPaymentGateway = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _openPaymentGateway(paymentUrl);
+    });
+  }
+
+  Future<void> _openPaymentGateway(String paymentUrl) async {
+    final messenger = ScaffoldMessenger.of(context);
     final url = Uri.tryParse(paymentUrl);
     if (url == null) {
       messenger.showSnackBar(
@@ -526,7 +377,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
-      const SnackBar(content: Text('Membuka halaman pembayaran...')),
+      const SnackBar(content: Text('Membuka halaman pembayaran Midtrans...')),
     );
 
     final launched = await launchUrl(url, mode: LaunchMode.inAppBrowserView);
@@ -536,26 +387,11 @@ class _PaymentPageState extends State<PaymentPage> {
 
     messenger.hideCurrentSnackBar();
     if (launched) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Lanjutkan pembayaran Anda di Midtrans.')),
-      );
+      await _controller.refreshPayment(silent: true);
       return;
     }
 
     await _showPaymentLinkDialog(paymentUrl);
-  }
-
-  Future<void> _handleRetry() async {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Mencoba ulang pembayaran...')),
-    );
-    await _controller.retryPayment();
-    if (!mounted) {
-      return;
-    }
-    messenger.hideCurrentSnackBar();
   }
 
   void _handleViewOrder() {
@@ -628,40 +464,59 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  String _statusMessage(PaymentStatus? status) {
-    switch (status) {
-      case PaymentStatus.pendingPayment:
-        return 'Menunggu konfirmasi pembayaran. Status akan diperbarui otomatis.';
+  _PaymentStatePresentation _paymentPresentation(PaymentDetailState state) {
+    switch (state.paymentDetail?.status) {
       case PaymentStatus.success:
-        return 'Pembayaran diterima. Pesanan Anda segera diproses.';
-      case PaymentStatus.failed:
-        return 'Pembayaran gagal. Silakan ulangi proses pembayaran.';
-      case PaymentStatus.expired:
-        return 'Waktu pembayaran habis. Silakan lakukan pembayaran ulang.';
+        return const _PaymentStatePresentation(
+          title: 'Pembayaran Berhasil',
+          message:
+              'Pembayaran Anda sudah dikonfirmasi. Pesanan akan segera diproses.',
+          icon: Icons.check_circle_outline_rounded,
+          foreground: Color(0xFF1B6A3A),
+          background: Color(0xFFE3F2E8),
+          border: Color(0xFFB8D8C2),
+        );
       case PaymentStatus.refunded:
-        return 'Dana sudah dikembalikan sesuai kebijakan refund.';
+        return const _PaymentStatePresentation(
+          title: 'Dana Dikembalikan',
+          message:
+              'Pembayaran sudah masuk proses pengembalian dana. Silakan cek pesanan Anda.',
+          icon: Icons.assignment_return_rounded,
+          foreground: Color(0xFF375272),
+          background: Color(0xFFE6EEF6),
+          border: Color(0xFFC3D6E8),
+        );
+      case PaymentStatus.failed:
+      case PaymentStatus.expired:
+        return const _PaymentStatePresentation(
+          title: 'Pembayaran Belum Berhasil',
+          message:
+              'Pembayaran belum dapat dikonfirmasi. Silakan kembali ke pesanan saya untuk melihat status terbaru.',
+          icon: Icons.error_outline_rounded,
+          foreground: OrderUiTokens.danger,
+          background: OrderUiTokens.dangerSoft,
+          border: Color(0xFFE2C3BC),
+        );
+      case PaymentStatus.pendingPayment:
+        return const _PaymentStatePresentation(
+          title: 'Menunggu Konfirmasi',
+          message:
+              'Halaman Midtrans sudah disiapkan. Setelah pembayaran berhasil, status akan diperbarui otomatis.',
+          icon: Icons.schedule_rounded,
+          foreground: OrderUiTokens.darkAction,
+          background: Color(0xFFFFE9D0),
+          border: Color(0xFFD7B184),
+        );
       case null:
-        return 'Menyiapkan status pembayaran terbaru.';
-    }
-  }
-
-  bool _shouldShowRetry(String? errorCode) {
-    switch (errorCode) {
-      case 'PAYMENT_GATEWAY_ERROR':
-      case 'PAYMENT_NOT_FOUND':
-      case 'VALIDATION_ERROR':
-      case 'INTERNAL_SERVER_ERROR':
-        return true;
-      case 'ORDER_EXPIRED':
-      case 'ORDER_NOT_PAYABLE':
-      case 'ACCOUNT_DISABLED':
-      case 'EMAIL_UNVERIFIED':
-      case 'PHONE_NUMBER_REQUIRED':
-      case 'ORDER_NOT_FOUND':
-      case 'UNAUTHORIZED':
-        return false;
-      default:
-        return true;
+        return const _PaymentStatePresentation(
+          title: 'Menyiapkan Pembayaran',
+          message:
+              'Sistem sedang menyiapkan halaman pembayaran Midtrans untuk pesanan Anda.',
+          icon: Icons.payments_outlined,
+          foreground: OrderUiTokens.darkAction,
+          background: Color(0xFFFFE9D0),
+          border: Color(0xFFD7B184),
+        );
     }
   }
 }
@@ -714,7 +569,7 @@ class _PaymentStatusBadge extends StatelessWidget {
           color: style.foreground,
           fontWeight: FontWeight.w800,
           fontSize: 12,
-          letterSpacing: 0.4,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -735,11 +590,6 @@ class _PaymentStatusBadge extends StatelessWidget {
           border: Color(0xFFB8D8C2),
         );
       case PaymentStatus.failed:
-        return const _StatusStyle(
-          foreground: OrderUiTokens.danger,
-          background: Color(0xFFF5E3E0),
-          border: Color(0xFFE0BDB6),
-        );
       case PaymentStatus.expired:
         return const _StatusStyle(
           foreground: OrderUiTokens.danger,
@@ -768,125 +618,22 @@ class _StatusStyle {
   final Color border;
 }
 
-class _PaymentMethodOption {
-  const _PaymentMethodOption({
-    required this.key,
-    required this.label,
-    required this.description,
+class _PaymentStatePresentation {
+  const _PaymentStatePresentation({
+    required this.title,
+    required this.message,
     required this.icon,
+    required this.foreground,
+    required this.background,
+    required this.border,
   });
 
-  final String key;
-  final String label;
-  final String description;
+  final String title;
+  final String message;
   final IconData icon;
-}
-
-const List<_PaymentMethodOption> _paymentMethodOptions = [
-  _PaymentMethodOption(
-    key: 'qris',
-    label: 'QRIS',
-    description: 'Scan QR untuk pembayaran cepat.',
-    icon: Icons.qr_code_rounded,
-  ),
-  _PaymentMethodOption(
-    key: 'bank_transfer',
-    label: 'Transfer Bank',
-    description: 'BCA, BNI, Mandiri, dan lainnya.',
-    icon: Icons.account_balance_rounded,
-  ),
-  _PaymentMethodOption(
-    key: 'ewallet',
-    label: 'E-Wallet',
-    description: 'GoPay, OVO, DANA, dan lainnya.',
-    icon: Icons.account_balance_wallet_rounded,
-  ),
-  _PaymentMethodOption(
-    key: 'others',
-    label: 'Metode Lainnya',
-    description: 'Kartu kredit, retail, dan opsi lain.',
-    icon: Icons.more_horiz_rounded,
-  ),
-];
-
-class _PaymentMethodCard extends StatelessWidget {
-  const _PaymentMethodCard({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final _PaymentMethodOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = isSelected
-        ? OrderUiTokens.accentAction
-        : OrderUiTokens.border;
-    final backgroundColor = isSelected
-        ? const Color(0x1AD88A16)
-        : OrderUiTokens.cardSurface;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderColor.withValues(alpha: 0.4)),
-              ),
-              child: Icon(option.icon, color: OrderUiTokens.darkAction),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    option.label,
-                    style: const TextStyle(
-                      color: OrderUiTokens.primaryText,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    option.description,
-                    style: const TextStyle(
-                      color: OrderUiTokens.mutedText,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              isSelected ? Icons.check_circle : Icons.circle_outlined,
-              color: isSelected
-                  ? OrderUiTokens.accentAction
-                  : OrderUiTokens.border,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  final Color foreground;
+  final Color background;
+  final Color border;
 }
 
 class _PaymentDetailSkeleton extends StatelessWidget {
@@ -900,10 +647,6 @@ class _PaymentDetailSkeleton extends StatelessWidget {
         _SkeletonCard(height: 140),
         SizedBox(height: 12),
         _SkeletonCard(height: 220),
-        SizedBox(height: 12),
-        _SkeletonCard(height: 160),
-        SizedBox(height: 12),
-        _SkeletonCard(height: 90),
       ],
     );
   }
@@ -923,7 +666,6 @@ class _SkeletonCard extends StatelessWidget {
       builder: (context, value, child) {
         return Opacity(opacity: value, child: child);
       },
-      onEnd: () {},
       child: Container(
         height: height,
         decoration: BoxDecoration(

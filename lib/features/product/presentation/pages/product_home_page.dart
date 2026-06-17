@@ -423,9 +423,17 @@ class _ProductHomePageState extends State<ProductHomePage> {
   }
 
   void _openCart(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const CartPage()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CartPage(
+          controller: widget.cartModule.createCartController(),
+          orderModule: widget.orderModule,
+          paymentModule: widget.paymentModule,
+          getProductDetailUseCase: widget.getProductDetailUseCase,
+          role: widget.sessionController.currentUser.role,
+        ),
+      ),
+    );
   }
 
   void _openOrders(BuildContext context) {

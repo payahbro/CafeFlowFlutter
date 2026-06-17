@@ -1,3 +1,4 @@
+import 'package:cafe/features/order/domain/entities/order.dart';
 import 'package:cafe/features/order/domain/entities/order_checkout_input.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/presentation/cubit/order_checkout_result_controller.dart';
@@ -22,7 +23,7 @@ class OrderCheckoutResultPage extends StatefulWidget {
   final OrderCheckoutResultController controller;
   final OrderCheckoutInput checkoutInput;
   final ValueChanged<String> onOpenOrderDetail;
-  final ValueChanged<String>? onContinuePayment;
+  final ValueChanged<Order>? onContinuePayment;
 
   @override
   State<OrderCheckoutResultPage> createState() =>
@@ -141,7 +142,7 @@ class _OrderCheckoutResultPageState extends State<OrderCheckoutResultPage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: canContinuePayment
-                              ? () => _onContinuePayment(order.orderId)
+                              ? () => _onContinuePayment(order)
                               : null,
                           style: OrderUiTokens.primaryButtonStyle(),
                           child: const Text('Lanjut Pembayaran'),
@@ -339,9 +340,9 @@ class _OrderCheckoutResultPageState extends State<OrderCheckoutResultPage> {
     );
   }
 
-  void _onContinuePayment(String orderId) {
+  void _onContinuePayment(Order order) {
     if (widget.onContinuePayment != null) {
-      widget.onContinuePayment!(orderId);
+      widget.onContinuePayment!(order);
       return;
     }
 

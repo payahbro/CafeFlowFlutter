@@ -10,6 +10,7 @@ import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart'
 import 'package:cafe/features/product/presentation/cubit/product_home_controller.dart';
 import 'package:cafe/features/product/presentation/pages/product_catalog_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_detail_page.dart';
+import 'package:cafe/features/product/presentation/pages/restaurant_location_page.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
 import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter/material.dart';
@@ -322,6 +323,14 @@ class _ProductHomePageState extends State<ProductHomePage> {
                 ),
               ),
               IconButton(
+                onPressed: () => _openRestaurantLocation(context),
+                icon: const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white,
+                ),
+                tooltip: 'Lokasi restoran',
+              ),
+              IconButton(
                 onPressed: widget.sessionController.logout,
                 icon: const Icon(Icons.logout, color: Colors.white),
                 tooltip: 'Keluar',
@@ -373,6 +382,17 @@ class _ProductHomePageState extends State<ProductHomePage> {
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                height: 180,
+                width: double.infinity,
+                color: const Color(0xFF573413),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.local_cafe_outlined,
+                  color: Color(0xFFF3D7A9),
+                  size: 42,
+                ),
+              ),
             ),
           ),
         ],
@@ -459,6 +479,12 @@ class _ProductHomePageState extends State<ProductHomePage> {
           },
         ),
       ),
+    );
+  }
+
+  void _openRestaurantLocation(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const RestaurantLocationPage()),
     );
   }
 }

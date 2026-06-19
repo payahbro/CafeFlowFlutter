@@ -11,31 +11,32 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeProductRepository implements ProductRepository {
   ProductQuery? lastQuery;
+  List<Product> products = <Product>[
+    _product(
+      id: 'product-1',
+      name: 'Americano',
+      category: ProductCategory.coffee,
+      status: ProductStatus.available,
+    ),
+    _product(
+      id: 'product-2',
+      name: 'Iced Latte',
+      category: ProductCategory.coffee,
+      status: ProductStatus.outOfStock,
+    ),
+    _product(
+      id: 'product-3',
+      name: 'Hidden Tea',
+      category: ProductCategory.coffee,
+      status: ProductStatus.unavailable,
+    ),
+  ];
 
   @override
   Future<ProductListPage> getProducts(ProductQuery query) async {
     lastQuery = query;
     return ProductListPage(
-      data: <Product>[
-        _product(
-          id: 'product-1',
-          name: 'Americano',
-          category: ProductCategory.coffee,
-          status: ProductStatus.available,
-        ),
-        _product(
-          id: 'product-2',
-          name: 'Iced Latte',
-          category: ProductCategory.coffee,
-          status: ProductStatus.outOfStock,
-        ),
-        _product(
-          id: 'product-3',
-          name: 'Hidden Tea',
-          category: ProductCategory.coffee,
-          status: ProductStatus.unavailable,
-        ),
-      ],
+      data: products,
       nextCursor: null,
       prevCursor: null,
       limit: query.limit,
@@ -108,6 +109,59 @@ void main() {
         'Iced Latte',
       ]);
       expect(controller.errorMessage, isNull);
+    },
+  );
+
+  test(
+    'loadFeatured shows all available products from the fetched page',
+    () async {
+      final repository = _FakeProductRepository()
+        ..products = List<Product>.generate(
+          12,
+          (index) => _product(
+            id: 'product-$index',
+            name: 'Product $index',
+            category: ProductCategory.coffee,
+            status: ProductStatus.available,
+          ),
+        );
+      final controller = ProductHomeController(GetProductsUseCase(repository));
+      addTearDown(controller.dispose);
+
+      await controller.loadFeatured();
+
+      expect(controller.products, hasLength(12));
+    },
+  );
+
+  test(
+    'loadFeatured notifies when a new product appears after baseline',
+    () async {
+      final repository = _FakeProductRepository();
+      final controller = ProductHomeController(GetProductsUseCase(repository));
+      addTearDown(controller.dispose);
+
+      await controller.loadFeatured();
+
+      expect(controller.newProductNotification, isNull);
+
+      repository.products = <Product>[
+        _product(
+          id: 'product-new',
+          name: 'Matcha Latte',
+          category: ProductCategory.coffee,
+          status: ProductStatus.available,
+        ),
+        ...repository.products,
+      ];
+
+      await controller.loadFeatured();
+
+      expect(controller.newProductNotification?.product.name, 'Matcha Latte');
+
+      controller.clearNewProductNotification();
+
+      expect(controller.newProductNotification, isNull);
     },
   );
 }

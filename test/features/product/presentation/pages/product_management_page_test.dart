@@ -45,8 +45,30 @@ class _FakeProductRepository implements ProductRepository {
   }
 
   @override
-  Future<Product> createProduct(UpsertProductInput input) {
-    throw UnimplementedError();
+  Future<Product> createProduct(UpsertProductInput input) async {
+    final product = Product(
+      id: 'created-${products.length + 1}',
+      name: input.name ?? 'Created Product',
+      description: input.description ?? 'Product description',
+      price: input.price ?? 20000,
+      category: input.category ?? ProductCategory.coffee,
+      status: input.status ?? ProductStatus.available,
+      imageUrl: input.imageUrl ?? 'https://invalid.example/created.png',
+      rating: 0,
+      totalSold: 0,
+      attributes:
+          input.attributes ??
+          const ProductAttributes(
+            temperature: <String>['hot'],
+            sizes: <String>['small'],
+            sugarLevels: <String>['normal'],
+            iceLevels: <String>['normal'],
+          ),
+      createdAt: DateTime(2026, 1, 5),
+      updatedAt: DateTime(2026, 1, 5),
+    );
+    products.insert(0, product);
+    return product;
   }
 
   @override
@@ -281,5 +303,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_listTile(tester, 'Restore produk').enabled, isTrue);
+  });
+
+  testWidgets('admin sees a bubble notification after creating a product', (
+    tester,
+  ) async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+    ]);
+
+    await _pumpPage(tester, controller: _controller(repository));
+
+    expect(find.text('Produk baru tersedia'), findsNothing);
+
+    await tester.tap(find.text('Tambah'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Matcha Latte');
+    await tester.enterText(find.byType(TextFormField).at(2), '28000');
+    await tester.enterText(
+      find.byType(TextFormField).at(3),
+      'https://invalid.example/matcha.png',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Produk baru tersedia'), findsOneWidget);
+    expect(find.text('Matcha Latte'), findsWidgets);
+    expect(find.text('Produk berhasil ditambahkan.'), findsOneWidget);
   });
 }

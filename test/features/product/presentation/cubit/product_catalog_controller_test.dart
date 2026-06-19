@@ -136,6 +136,25 @@ void main() {
     expect(controller.products.single.name, 'Iced Latte');
   });
 
+  test('updateSearch can show more than ten matching products', () async {
+    final manyProducts = List<Product>.generate(
+      12,
+      (index) => _product(
+        id: 'latte-$index',
+        name: 'Latte $index',
+        category: ProductCategory.coffee,
+        status: ProductStatus.available,
+      ),
+    );
+    final repository = _FakeProductRepository(manyProducts);
+    final controller = ProductCatalogController(GetProductsUseCase(repository));
+    addTearDown(controller.dispose);
+
+    await controller.updateSearch('latte');
+
+    expect(controller.products, hasLength(12));
+  });
+
   test(
     'updateCategory applies local category filter to remote products',
     () async {

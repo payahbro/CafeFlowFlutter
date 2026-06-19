@@ -1,5 +1,7 @@
 import 'package:cafe/features/payment/domain/entities/payment_detail.dart';
 import 'package:cafe/features/payment/domain/entities/payment_initiation.dart';
+import 'package:cafe/features/payment/domain/entities/payment_list_page.dart';
+import 'package:cafe/features/payment/domain/entities/payment_query.dart';
 import 'package:cafe/features/payment/domain/entities/payment_status.dart';
 import 'package:cafe/features/payment/domain/repositories/payment_repository.dart';
 import 'package:cafe/features/payment/domain/usecases/get_payment_by_order_usecase.dart';
@@ -82,5 +84,11 @@ class _FakePaymentRepository implements PaymentRepository {
       createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
       updatedAt: DateTime.now(),
     );
+  }
+
+  @override
+  Future<PaymentListPage> getPayments(PaymentQuery query) {
+    // TODO: implement getPayments
+    throw UnimplementedError();
   }
 }

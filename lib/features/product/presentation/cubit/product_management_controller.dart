@@ -8,6 +8,7 @@ import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart'
 import 'package:cafe/features/product/domain/usecases/restore_product_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/update_product_status_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/update_product_usecase.dart';
+import 'package:cafe/features/product/presentation/cubit/product_new_notification.dart';
 import 'package:flutter/foundation.dart';
 
 class ProductManagementController extends ChangeNotifier {
@@ -41,6 +42,9 @@ class ProductManagementController extends ChangeNotifier {
   ProductSortBy _sortBy = ProductSortBy.name;
   SortDirection _sortDirection = SortDirection.asc;
   final List<Product> _products = <Product>[];
+  final Set<String> _seenProductIds = <String>{};
+  bool _hasLoadedProducts = false;
+  ProductNewNotification? _newProductNotification;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -51,6 +55,7 @@ class ProductManagementController extends ChangeNotifier {
   ProductSortBy get sortBy => _sortBy;
   SortDirection get sortDirection => _sortDirection;
   List<Product> get products => _products;
+  ProductNewNotification? get newProductNotification => _newProductNotification;
 
   Future<void> loadProducts() async {
     _isLoading = true;
@@ -73,6 +78,7 @@ class ProductManagementController extends ChangeNotifier {
       _products
         ..clear()
         ..addAll(page.data);
+      _trackNewProducts(page.data);
     } catch (error) {
       _errorMessage = '$error';
     } finally {
@@ -131,14 +137,16 @@ class ProductManagementController extends ChangeNotifier {
     await loadProducts();
   }
 
-  Future<void> createProduct(UpsertProductInput input) async {
+  Future<bool> createProduct(UpsertProductInput input) async {
     try {
       _errorMessage = null;
       await _createProductUseCase(input);
       await loadProducts();
+      return true;
     } catch (error) {
       _errorMessage = '$error';
       notifyListeners();
+      return false;
     }
   }
 
@@ -224,5 +232,27 @@ class ProductManagementController extends ChangeNotifier {
       updatedAt: now,
       deletedAt: now,
     );
+  }
+
+  void clearNewProductNotification() {
+    _newProductNotification = null;
+    notifyListeners();
+  }
+
+  void _trackNewProducts(List<Product> products) {
+    final newProducts = products
+        .where((product) => !_seenProductIds.contains(product.id))
+        .toList(growable: false);
+
+    if (_hasLoadedProducts && newProducts.isNotEmpty) {
+      _newProductNotification = ProductNewNotification(
+        product: newProducts.first,
+      );
+    }
+
+    _seenProductIds
+      ..clear()
+      ..addAll(products.map((product) => product.id));
+    _hasLoadedProducts = true;
   }
 }

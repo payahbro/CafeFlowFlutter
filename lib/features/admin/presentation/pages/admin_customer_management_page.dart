@@ -73,14 +73,28 @@ class _AdminCustomerManagementPageState
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          const Expanded(
-            child: Text(
-              'Customer Management',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'User Management',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_controller.customers.length} user ditampilkan',
+                  style: const TextStyle(
+                    color: Color(0xFFF3D7A9),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
           const Text(
@@ -109,7 +123,7 @@ class _AdminCustomerManagementPageState
                   controller: _searchController,
                   onSubmitted: (_) => _applySearch(),
                   decoration: InputDecoration(
-                    hintText: 'Cari nama atau email customer',
+                    hintText: 'Cari nama, email, atau telepon user',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: const Color(0xFFF7F3EF),
@@ -241,7 +255,7 @@ class _AdminCustomerManagementPageState
               physics: const AlwaysScrollableScrollPhysics(),
               children: const [
                 SizedBox(height: 120),
-                Center(child: Text('Customer tidak ditemukan.')),
+                Center(child: Text('User tidak ditemukan.')),
               ],
             )
           : ListView(
@@ -338,7 +352,7 @@ class _AdminCustomerManagementPageState
               if (detail == null) {
                 return const Padding(
                   padding: EdgeInsets.all(24),
-                  child: Text('Detail customer tidak tersedia.'),
+                  child: Text('Detail user tidak tersedia.'),
                 );
               }
 
@@ -416,6 +430,15 @@ class _CustomerCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
+                        Chip(
+                          label: Text(_formatRole(customer.role)),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: const Color(0xFFE8F0FE),
+                          labelStyle: const TextStyle(
+                            color: Color(0xFF174EA6),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         Chip(
                           label: Text(customer.isActive ? 'Aktif' : 'Nonaktif'),
                           visualDensity: VisualDensity.compact,
@@ -502,6 +525,7 @@ class _CustomerDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _DetailRow(label: 'User ID', value: customer.id),
+          _DetailRow(label: 'Role', value: _formatRole(customer.role)),
           _DetailRow(label: 'Telepon', value: customer.phoneNumber),
           _DetailRow(
             label: 'Status',
@@ -585,4 +609,17 @@ String _formatDateLong(DateTime? date) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$day/$month/${local.year} $hour:$minute';
+}
+
+String _formatRole(String role) {
+  switch (role.toUpperCase()) {
+    case 'ADMIN':
+      return 'Admin';
+    case 'PEGAWAI':
+      return 'Pegawai';
+    case 'CUSTOMER':
+      return 'Customer';
+    default:
+      return role.isEmpty ? '-' : role;
+  }
 }

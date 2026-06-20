@@ -1,3 +1,4 @@
+import 'package:cafe/core/errors/app_exception.dart';
 import 'package:cafe/core/network/api_client.dart';
 import 'package:cafe/features/admin/data/models/customer_list_page_model.dart';
 import 'package:cafe/features/admin/data/models/customer_model.dart';
@@ -36,19 +37,25 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<CustomerListPageModel> getCustomers(CustomerQuery query) async {
-    final response = await _apiClient.get(
-      '/admin/customers',
-      queryParameters: query.toQueryParameters(),
-    );
-    return CustomerListPageModel.fromJson(response);
+    final response = await _apiClient.get('/users');
+    return CustomerListPageModel.fromUsersResponse(response, query);
   }
 
   @override
   Future<CustomerModel> getCustomerDetail(String userId) async {
-    final response = await _apiClient.get('/admin/customers/$userId');
-    final data =
-        response['data'] as Map<String, dynamic>? ?? const <String, dynamic>{};
-    return CustomerModel.fromJson(data);
+    final response = await _apiClient.get('/users');
+    final page = CustomerListPageModel.fromUsersResponse(
+      response,
+      const CustomerQuery(limit: 100),
+    );
+
+    for (final customer in page.items) {
+      if (customer.id == userId) {
+        return customer;
+      }
+    }
+
+    throw AppException('Customer tidak ditemukan.', code: 'CUSTOMER_NOT_FOUND');
   }
 
   @override

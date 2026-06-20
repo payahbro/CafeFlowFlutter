@@ -6,6 +6,7 @@ class CustomerModel {
     required this.fullName,
     required this.email,
     required this.phoneNumber,
+    required this.role,
     required this.isActive,
     required this.isVerified,
     required this.createdAt,
@@ -16,6 +17,7 @@ class CustomerModel {
   final String fullName;
   final String email;
   final String phoneNumber;
+  final String role;
   final bool isActive;
   final bool isVerified;
   final DateTime? createdAt;
@@ -27,6 +29,7 @@ class CustomerModel {
       fullName: json['full_name'] as String? ?? '-',
       email: json['email'] as String? ?? '-',
       phoneNumber: json['phone_number'] as String? ?? '-',
+      role: json['role'] as String? ?? 'CUSTOMER',
       isActive: json['is_active'] as bool? ?? false,
       isVerified: json['is_verified'] as bool? ?? false,
       avatarUrl: json['avatar_url'] as String?,
@@ -40,6 +43,7 @@ class CustomerModel {
       fullName: fullName,
       email: email,
       phoneNumber: phoneNumber,
+      role: role,
       isActive: isActive,
       isVerified: isVerified,
       avatarUrl: avatarUrl,

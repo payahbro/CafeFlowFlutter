@@ -57,10 +57,22 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _authRepository.logout();
-    _isLoggedIn = false;
-    _accessToken = null;
+    final token = _accessToken;
+    _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+
+    try {
+      await _authRepository.logout(accessToken: token);
+      _isLoggedIn = false;
+      _accessToken = null;
+      _errorMessage = null;
+    } catch (error) {
+      _errorMessage = '$error';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

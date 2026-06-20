@@ -24,7 +24,7 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> logout() async {}
+  Future<void> logout({String? accessToken}) async {}
 }
 
 class _FakeProductRepository implements ProductRepository {

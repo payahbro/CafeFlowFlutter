@@ -9,6 +9,7 @@ import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:cafe/features/product/presentation/cubit/product_home_controller.dart';
+import 'package:cafe/features/product/presentation/pages/customer_profile_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_catalog_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_detail_page.dart';
 import 'package:cafe/features/product/presentation/pages/restaurant_location_page.dart';
@@ -152,6 +153,11 @@ class _ProductHomePageState extends State<ProductHomePage> {
 
           if (index == 2) {
             _openCart(context);
+            return;
+          }
+
+          if (index == 3) {
+            _openProfile(context);
           }
         },
         selectedItemColor: const Color(0xFFD88A16),
@@ -527,6 +533,15 @@ class _ProductHomePageState extends State<ProductHomePage> {
   void _openRestaurantLocation(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const RestaurantLocationPage()),
+    );
+  }
+
+  void _openProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            CustomerProfilePage(sessionController: widget.sessionController),
+      ),
     );
   }
 }

@@ -33,5 +33,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> logout() async {}
+  Future<void> logout({String? accessToken}) async {
+    if (accessToken == null || accessToken.isEmpty) {
+      return;
+    }
+
+    await _supabaseAuthRemoteDataSource.logout(accessToken);
+  }
 }

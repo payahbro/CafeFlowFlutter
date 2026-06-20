@@ -8,6 +8,8 @@ abstract class SupabaseAuthRemoteDataSource {
     required String email,
     required String password,
   });
+
+  Future<void> logout(String accessToken);
 }
 
 class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
@@ -44,6 +46,28 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw const AppException('Login gagal: token Supabase kosong.');
     }
     return token;
+  }
+
+  @override
+  Future<void> logout(String accessToken) async {
+    if (_anonKey.isEmpty) {
+      throw const AppException(
+        'SUPABASE_ANON_KEY belum dikonfigurasi.',
+        code: 'SUPABASE_CONFIG_MISSING',
+      );
+    }
+
+    if (accessToken.isEmpty) {
+      return;
+    }
+
+    await _apiClient.post(
+      '/logout',
+      headers: <String, String>{
+        'apikey': _anonKey,
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
   }
 
   static SupabaseAuthRemoteDataSourceImpl fromConfig() {

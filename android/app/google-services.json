@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "501047752912",
+    "project_id": "cafeflow-demo",
+    "storage_bucket": "cafeflow-demo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501047752912:android:5a2f7db19aff064e1446d5",
+        "android_client_info": {
+          "package_name": "com.example.cafe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFH2cvSnMRNoikAf0OwcmaZTHhvav8rAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

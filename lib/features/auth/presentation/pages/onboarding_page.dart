@@ -91,16 +91,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
             final dotActiveWidth = dotHeight * 2.2;
             final dotSpacing = dotHeight * 1.2;
             final dotBorderWidth = c(w * 0.003, 1, 1.4);
-            final textAreaHeight = c(h * 0.18, 110, 170);
+            final textAreaHeight = c(h * 0.22, 150, 210);
 
             return Stack(
               children: [
-                const Positioned.fill(
-                  child: Image(
-                    image: NetworkImage(
-                      'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1400&q=80',
-                    ),
+                Positioned.fill(
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1400&q=80',
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF6F4A32), Color(0xFFE87B35)],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const Positioned.fill(child: _VignetteOverlay()),

@@ -4,11 +4,21 @@ import 'package:cafe/app/di/order_module.dart';
 import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/app/di/product_module.dart';
 import 'package:cafe/app/router/app_shell_page.dart';
+import 'package:cafe/core/notifications/app_notification_service.dart';
+import 'package:cafe/core/notifications/firebase_background_handler.dart';
+import 'package:cafe/firebase_options.dart';
 import 'package:cafe/features/auth/presentation/pages/onboarding_page.dart';
 import 'package:cafe/shared/services/session_controller.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await AppNotificationService.instance.initialize();
+
   final sessionController = SessionController();
   final productModule = ProductModule(
     authTokenProvider: () => sessionController.accessToken,

@@ -4,13 +4,16 @@ import 'package:cafe/app/di/payment_module.dart';
 import 'package:cafe/features/cart/presentation/pages/cart_page.dart';
 import 'package:cafe/features/order/presentation/pages/customer_order_list_page.dart';
 import 'package:cafe/features/order/presentation/pages/order_detail_page.dart';
+import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:cafe/features/product/presentation/cubit/product_home_controller.dart';
 import 'package:cafe/features/product/presentation/pages/product_catalog_page.dart';
 import 'package:cafe/features/product/presentation/pages/product_detail_page.dart';
+import 'package:cafe/features/product/presentation/pages/restaurant_location_page.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
+import 'package:cafe/features/product/presentation/widgets/new_product_bubble.dart';
 import 'package:cafe/shared/services/session_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -57,48 +60,86 @@ class _ProductHomePageState extends State<ProductHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 18),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  'Kategori',
-                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final notification = _controller.newProductNotification;
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: _controller.loadFeatured,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context),
+                        const SizedBox(height: 18),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'Kategori',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _categoryItem(context, 'Semua', null),
+                              _categoryItem(
+                                context,
+                                'Coffee',
+                                ProductCategory.coffee,
+                              ),
+                              _categoryItem(
+                                context,
+                                'Makanan',
+                                ProductCategory.food,
+                              ),
+                              _categoryItem(
+                                context,
+                                'Snak',
+                                ProductCategory.snack,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'Menu Pilihan',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildFeaturedProducts(),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _categoryItem(context, 'Semua', null),
-                    _categoryItem(context, 'Coffee', ProductCategory.coffee),
-                    _categoryItem(context, 'Makanan', ProductCategory.food),
-                    _categoryItem(context, 'Snak', ProductCategory.snack),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  'Menu Pilihan',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 8),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) => _buildFeaturedProducts(),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
+                if (notification != null)
+                  NewProductBubble(
+                    product: notification.product,
+                    onDismiss: _controller.clearNewProductNotification,
+                    onTap: () {
+                      _controller.clearNewProductNotification();
+                      _openProductDetail(context, notification.product);
+                    },
+                  ),
+              ],
+            );
+          },
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -186,18 +227,7 @@ class _ProductHomePageState extends State<ProductHomePage> {
       itemBuilder: (context, index) {
         final product = featuredProducts[index];
         return InkWell(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => ProductDetailPage(
-                  productId: product.id,
-                  initialProduct: product,
-                  getProductDetailUseCase: widget.getProductDetailUseCase,
-                  addCartItemUseCase: widget.cartModule.addCartItemUseCase,
-                ),
-              ),
-            );
-          },
+          onTap: () => _openProductDetail(context, product),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -322,6 +352,14 @@ class _ProductHomePageState extends State<ProductHomePage> {
                 ),
               ),
               IconButton(
+                onPressed: () => _openRestaurantLocation(context),
+                icon: const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white,
+                ),
+                tooltip: 'Lokasi restoran',
+              ),
+              IconButton(
                 onPressed: widget.sessionController.logout,
                 icon: const Icon(Icons.logout, color: Colors.white),
                 tooltip: 'Keluar',
@@ -373,6 +411,17 @@ class _ProductHomePageState extends State<ProductHomePage> {
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                height: 180,
+                width: double.infinity,
+                color: const Color(0xFF573413),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.local_cafe_outlined,
+                  color: Color(0xFFF3D7A9),
+                  size: 42,
+                ),
+              ),
             ),
           ),
         ],
@@ -422,6 +471,19 @@ class _ProductHomePageState extends State<ProductHomePage> {
     );
   }
 
+  void _openProductDetail(BuildContext context, Product product) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProductDetailPage(
+          productId: product.id,
+          initialProduct: product,
+          getProductDetailUseCase: widget.getProductDetailUseCase,
+          addCartItemUseCase: widget.cartModule.addCartItemUseCase,
+        ),
+      ),
+    );
+  }
+
   void _openCart(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -459,6 +521,12 @@ class _ProductHomePageState extends State<ProductHomePage> {
           },
         ),
       ),
+    );
+  }
+
+  void _openRestaurantLocation(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const RestaurantLocationPage()),
     );
   }
 }

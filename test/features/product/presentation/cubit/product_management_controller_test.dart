@@ -43,8 +43,14 @@ class _FakeProductRepository implements ProductRepository {
   }
 
   @override
-  Future<Product> createProduct(UpsertProductInput input) {
-    throw UnimplementedError();
+  Future<Product> createProduct(UpsertProductInput input) async {
+    final product = _product(
+      id: 'created-${_products.length + 1}',
+      name: input.name ?? 'Created Product',
+      status: input.status ?? ProductStatus.available,
+    );
+    _products.insert(0, product);
+    return product;
   }
 
   @override
@@ -224,6 +230,56 @@ void main() {
       expect(controller.products.single.id, 'product-1');
       expect(controller.products.single.status, ProductStatus.available);
       expect(controller.products.single.isDeleted, isFalse);
+    },
+  );
+
+  test(
+    'loadProducts does not notify for products on initial baseline',
+    () async {
+      final repository = _FakeProductRepository(<Product>[
+        _product(
+          id: 'product-1',
+          name: 'Latte',
+          status: ProductStatus.available,
+        ),
+      ]);
+      final controller = _controller(repository);
+      addTearDown(controller.dispose);
+
+      await controller.loadProducts();
+
+      expect(controller.newProductNotification, isNull);
+    },
+  );
+
+  test(
+    'createProduct notifies with the created product after reload',
+    () async {
+      final repository = _FakeProductRepository(<Product>[
+        _product(
+          id: 'product-1',
+          name: 'Latte',
+          status: ProductStatus.available,
+        ),
+      ]);
+      final controller = _controller(repository);
+      addTearDown(controller.dispose);
+
+      await controller.loadProducts();
+      final success = await controller.createProduct(
+        const UpsertProductInput(
+          name: 'Matcha Latte',
+          price: 28000,
+          imageUrl: 'https://invalid.example/matcha.png',
+        ),
+      );
+
+      expect(success, isTrue);
+      expect(controller.newProductNotification?.product.name, 'Matcha Latte');
+
+      controller.clearNewProductNotification();
+
+      expect(controller.newProductNotification, isNull);
     },
   );
 }

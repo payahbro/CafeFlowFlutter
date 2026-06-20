@@ -30,8 +30,12 @@ void main() {
       ),
     );
 
-    // "Masuk" tampil sebagai judul dan juga label tombol.
-    expect(find.text('Masuk'), findsAtLeastNWidgets(1));
+    expect(find.text('Kopi Terbaik, Hanya Untukmu'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
+
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
     expect(find.text('Masuk ke akun CafeKu'), findsOneWidget);

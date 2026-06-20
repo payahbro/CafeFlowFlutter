@@ -4,6 +4,7 @@ import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/entities/upsert_product_input.dart';
 import 'package:cafe/features/product/presentation/cubit/product_management_controller.dart';
 import 'package:cafe/features/product/presentation/widgets/currency_text.dart';
+import 'package:cafe/features/product/presentation/widgets/new_product_bubble.dart';
 import 'package:cafe/shared/models/app_user.dart';
 import 'package:flutter/material.dart';
 
@@ -54,43 +55,59 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
-            return Column(
+            final notification = _controller.newProductNotification;
+            return Stack(
               children: [
-                _buildHeader(isAdmin),
-                _buildFilters(isAdmin),
-                if (_controller.errorMessage != null)
-                  Container(
-                    width: double.infinity,
-                    color: const Color(0xFFFFF3E0),
-                    padding: const EdgeInsets.all(10),
-                    child: Text(
-                      _controller.errorMessage!,
-                      style: const TextStyle(color: Color(0xFF8A3B00)),
-                    ),
-                  ),
-                if (_controller.isLoading)
-                  const LinearProgressIndicator(minHeight: 2),
-                Expanded(
-                  child: _controller.products.isEmpty && !_controller.isLoading
-                      ? const Center(child: Text('Produk tidak ditemukan'))
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
-                          itemCount: _controller.products.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final product = _controller.products[index];
-                            return _ProductTile(
-                              product: product,
-                              onTap: () => _openActions(
-                                context,
-                                product,
-                                isAdmin: isAdmin,
-                              ),
-                            );
-                          },
+                Column(
+                  children: [
+                    _buildHeader(isAdmin),
+                    _buildFilters(isAdmin),
+                    if (_controller.errorMessage != null)
+                      Container(
+                        width: double.infinity,
+                        color: const Color(0xFFFFF3E0),
+                        padding: const EdgeInsets.all(10),
+                        child: Text(
+                          _controller.errorMessage!,
+                          style: const TextStyle(color: Color(0xFF8A3B00)),
                         ),
+                      ),
+                    if (_controller.isLoading)
+                      const LinearProgressIndicator(minHeight: 2),
+                    Expanded(
+                      child:
+                          _controller.products.isEmpty && !_controller.isLoading
+                          ? const Center(child: Text('Produk tidak ditemukan'))
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                12,
+                                12,
+                                20,
+                              ),
+                              itemCount: _controller.products.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                final product = _controller.products[index];
+                                return _ProductTile(
+                                  product: product,
+                                  onTap: () => _openActions(
+                                    context,
+                                    product,
+                                    isAdmin: isAdmin,
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
+                if (notification != null)
+                  NewProductBubble(
+                    product: notification.product,
+                    onDismiss: _controller.clearNewProductNotification,
+                  ),
               ],
             );
           },
@@ -315,11 +332,13 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     );
     if (!context.mounted || result == null) return;
 
-    await _controller.createProduct(result);
+    final success = await _controller.createProduct(result);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Produk berhasil dibuat')));
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Produk berhasil ditambahkan.')),
+      );
+    }
   }
 
   Future<void> _openActions(

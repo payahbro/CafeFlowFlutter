@@ -16,7 +16,7 @@ class ProductCatalogController extends ChangeNotifier {
   final List<Product>? _seedProducts;
 
   final List<Product> _products = <Product>[];
-  ProductQuery _query = const ProductQuery(limit: 10);
+  ProductQuery _query = const ProductQuery(limit: _remotePageLimit);
 
   bool _isLoading = false;
   bool _isPaginating = false;

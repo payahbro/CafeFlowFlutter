@@ -3,7 +3,7 @@ class AppConfig {
 
   static const String backendOrigin = String.fromEnvironment(
     'BACKEND_ORIGIN',
-    defaultValue: 'http://10.0.2.2:8080',
+    defaultValue: 'http://34.101.80.186:8080',
   );
 
   static const String apiBaseUrl = '$backendOrigin/api/v1';

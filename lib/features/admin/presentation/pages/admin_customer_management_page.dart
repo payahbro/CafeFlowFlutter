@@ -535,10 +535,6 @@ class _CustomerDetailSheet extends StatelessWidget {
             label: 'Verified',
             value: customer.isVerified ? 'Ya' : 'Tidak',
           ),
-          _DetailRow(
-            label: 'Terdaftar',
-            value: _formatDateLong(customer.createdAt),
-          ),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
@@ -596,19 +592,6 @@ String _formatDateShort(DateTime? date) {
   final day = local.day.toString().padLeft(2, '0');
   final month = local.month.toString().padLeft(2, '0');
   return '$day/$month/${local.year}';
-}
-
-String _formatDateLong(DateTime? date) {
-  if (date == null) {
-    return '-';
-  }
-
-  final local = date.toLocal();
-  final day = local.day.toString().padLeft(2, '0');
-  final month = local.month.toString().padLeft(2, '0');
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '$day/$month/${local.year} $hour:$minute';
 }
 
 String _formatRole(String role) {

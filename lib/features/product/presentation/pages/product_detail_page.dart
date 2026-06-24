@@ -271,10 +271,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildCoffeeAttributes(Product product) {
-    final temps = _effectiveCoffeeTemperature(product);
-    final sizes = _effectiveCoffeeSizes(product);
-    final sugar = _effectiveCoffeeSugarLevels(product);
-    final ice = _effectiveCoffeeIceLevels(product);
+    final temps = product.attributes.temperature;
+    final sizes = product.attributes.sizes;
+    final sugar = product.attributes.sugarLevels;
+    final ice = product.attributes.iceLevels;
 
     final children = <Widget>[];
 
@@ -361,8 +361,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildFoodSnackAttributes(Product product) {
-    final portions = _effectiveFoodPortions(product);
-    final spicy = _effectiveFoodSpicyLevels(product);
+    final portions = product.attributes.portions;
+    final spicy = product.attributes.spicyLevels;
 
     final children = <Widget>[];
 
@@ -654,10 +654,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (!mounted) return;
 
       if (product.category == ProductCategory.coffee) {
-        final temps = _effectiveCoffeeTemperature(product);
-        final sizes = _effectiveCoffeeSizes(product);
-        final sugar = _effectiveCoffeeSugarLevels(product);
-        final ice = _effectiveCoffeeIceLevels(product);
+        final temps = product.attributes.temperature;
+        final sizes = product.attributes.sizes;
+        final sugar = product.attributes.sugarLevels;
+        final ice = product.attributes.iceLevels;
 
         if (_controller.selectedTemperature == null && temps.isNotEmpty) {
           _controller.selectTemperature(temps.first);
@@ -678,8 +678,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         return;
       }
 
-      final portions = _effectiveFoodPortions(product);
-      final spicy = _effectiveFoodSpicyLevels(product);
+      final portions = product.attributes.portions;
+      final spicy = product.attributes.spicyLevels;
       if (_controller.selectedPortion == null && portions.isNotEmpty) {
         _controller.selectPortion(portions.first);
       }
@@ -687,46 +687,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         _controller.selectSpicyLevel(spicy.first);
       }
     });
-  }
-
-  // --- Effective options (API-spec fallbacks) ---
-  // If backend doesn't send attributes yet, we still want the UI to show choices.
-  // We only apply fallbacks when the attribute list is empty.
-
-  List<String> _effectiveCoffeeTemperature(Product product) {
-    final list = product.attributes.temperature;
-    return list.isNotEmpty ? list : const <String>['hot', 'iced'];
-  }
-
-  List<String> _effectiveCoffeeSizes(Product product) {
-    final list = product.attributes.sizes;
-    return list.isNotEmpty ? list : const <String>['small', 'medium', 'large'];
-  }
-
-  List<String> _effectiveCoffeeSugarLevels(Product product) {
-    final list = product.attributes.sugarLevels;
-    return list.isNotEmpty
-        ? list
-        : const <String>['normal', 'less', 'no_sugar'];
-  }
-
-  List<String> _effectiveCoffeeIceLevels(Product product) {
-    final list = product.attributes.iceLevels;
-    // Per API spec: ice_levels required when iced is available.
-    // For UI mock we keep it present, but it will be disabled unless temperature == iced.
-    return list.isNotEmpty ? list : const <String>['normal', 'less', 'no_ice'];
-  }
-
-  List<String> _effectiveFoodPortions(Product product) {
-    final list = product.attributes.portions;
-    return list.isNotEmpty ? list : const <String>['regular', 'large'];
-  }
-
-  List<String> _effectiveFoodSpicyLevels(Product product) {
-    final list = product.attributes.spicyLevels;
-    return list.isNotEmpty
-        ? list
-        : const <String>['no_spicy', 'mild', 'medium', 'hot'];
   }
 
   String _formatOptionLabel(String value) {

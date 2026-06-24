@@ -236,6 +236,41 @@ void main() {
     },
   );
 
+  testWidgets(
+    'Coffee product only shows attribute groups returned by the API',
+    (tester) async {
+      final product = _baseProduct(
+        category: ProductCategory.coffee,
+        attributes: const ProductAttributes(sizes: <String>['small', 'medium']),
+      );
+      final cartRepository = _FakeCartRepository();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProductDetailPage(
+            productId: 'uuid',
+            getProductDetailUseCase: GetProductDetailUseCase(
+              _FakeProductRepository(product),
+            ),
+            addCartItemUseCase: AddCartItemUseCase(cartRepository),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('SIZE SELECTION'), findsOneWidget);
+      expect(find.text('TEMPERATURE'), findsNothing);
+      expect(find.text('SUGAR LEVELS'), findsNothing);
+      expect(find.text('ICE LEVELS'), findsNothing);
+
+      await tester.ensureVisible(find.text('Add to Cart'));
+      await tester.tap(find.text('Add to Cart'));
+      await tester.pumpAndSettle();
+
+      expect(cartRepository.lastAttributes, <String, String>{'sizes': 'small'});
+    },
+  );
+
   testWidgets('Food product: shows portion/spicy and hides coffee attributes', (
     tester,
   ) async {
@@ -273,6 +308,44 @@ void main() {
     expect(find.text('SIZE SELECTION'), findsNothing);
     expect(find.text('SUGAR LEVELS'), findsNothing);
   });
+
+  testWidgets(
+    'Snack product with portions only hides spicy options and omits them from cart',
+    (tester) async {
+      final product = _baseProduct(
+        category: ProductCategory.snack,
+        attributes: const ProductAttributes(
+          portions: <String>['regular', 'large'],
+        ),
+      );
+      final cartRepository = _FakeCartRepository();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProductDetailPage(
+            productId: 'uuid',
+            getProductDetailUseCase: GetProductDetailUseCase(
+              _FakeProductRepository(product),
+            ),
+            addCartItemUseCase: AddCartItemUseCase(cartRepository),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PORTION'), findsOneWidget);
+      expect(find.text('SPICY LEVELS'), findsNothing);
+      expect(find.text('No Spicy'), findsNothing);
+
+      await tester.ensureVisible(find.text('Add to Cart'));
+      await tester.tap(find.text('Add to Cart'));
+      await tester.pumpAndSettle();
+
+      expect(cartRepository.lastAttributes, <String, String>{
+        'portions': 'regular',
+      });
+    },
+  );
 
   testWidgets('Out of stock product cannot be added to cart', (tester) async {
     final product = _baseProduct(

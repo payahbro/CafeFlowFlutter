@@ -149,6 +149,7 @@ Product _product({
   required String id,
   required String name,
   required ProductStatus status,
+  ProductCategory category = ProductCategory.coffee,
   DateTime? deletedAt,
 }) {
   final now = DateTime(2026, 1, 1);
@@ -157,7 +158,7 @@ Product _product({
     name: name,
     description: 'Product description',
     price: 20000,
-    category: ProductCategory.coffee,
+    category: category,
     status: status,
     imageUrl: 'https://invalid.example/$id.png',
     rating: 4.2,
@@ -196,22 +197,87 @@ ListTile _listTile(WidgetTester tester, String title) {
 }
 
 void main() {
-  testWidgets('admin product management loads with deleted products included', (
-    tester,
-  ) async {
+  testWidgets(
+    'product management always loads with deleted products included',
+    (tester) async {
+      final repository = _FakeProductRepository(<Product>[
+        _product(
+          id: 'deleted-product',
+          name: 'Deleted Latte',
+          status: ProductStatus.unavailable,
+          deletedAt: DateTime(2026, 1, 2),
+        ),
+      ]);
+
+      await _pumpPage(tester, controller: _controller(repository));
+
+      expect(repository.queries.single.includeDeleted, isTrue);
+      expect(find.text('Deleted Latte'), findsOneWidget);
+    },
+  );
+
+  testWidgets('search filters products after debounce', (tester) async {
     final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
       _product(
-        id: 'deleted-product',
-        name: 'Deleted Latte',
-        status: ProductStatus.unavailable,
-        deletedAt: DateTime(2026, 1, 2),
+        id: 'product-2',
+        name: 'Espresso',
+        status: ProductStatus.available,
       ),
     ]);
 
     await _pumpPage(tester, controller: _controller(repository));
 
-    expect(repository.queries.single.includeDeleted, isTrue);
-    expect(find.text('Deleted Latte'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'lat');
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('Latte'), findsOneWidget);
+    expect(find.text('Espresso'), findsNothing);
+    expect(repository.queries, hasLength(1));
+  });
+
+  testWidgets('category and status filters work without another API request', (
+    tester,
+  ) async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+      _product(
+        id: 'product-2',
+        name: 'Croissant',
+        category: ProductCategory.food,
+        status: ProductStatus.outOfStock,
+      ),
+    ]);
+
+    await _pumpPage(tester, controller: _controller(repository));
+
+    await tester.tap(find.text('Semua kategori'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('food').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Semua status'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('out_of_stock').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Croissant'), findsOneWidget);
+    expect(find.text('Latte'), findsNothing);
+    expect(repository.queries, hasLength(1));
+  });
+
+  testWidgets('sort and include deleted controls are not shown', (
+    tester,
+  ) async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+    ]);
+
+    await _pumpPage(tester, controller: _controller(repository));
+
+    expect(find.textContaining('Sort:'), findsNothing);
+    expect(find.textContaining('Arah:'), findsNothing);
+    expect(find.text('Include soft-deleted'), findsNothing);
+    expect(find.text('Cari'), findsNothing);
   });
 
   testWidgets('admin can manage unavailable product that is not deleted', (

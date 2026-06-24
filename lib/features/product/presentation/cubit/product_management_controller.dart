@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/entities/product_query.dart';
@@ -33,27 +35,26 @@ class ProductManagementController extends ChangeNotifier {
   final DeleteProductUseCase _deleteProductUseCase;
   final RestoreProductUseCase _restoreProductUseCase;
 
+  static const Duration _searchDebounceDuration = Duration(milliseconds: 300);
+
   bool _isLoading = false;
   String? _errorMessage;
-  bool _includeDeleted = false;
   String _search = '';
   ProductCategory? _categoryFilter;
   ProductStatus? _statusFilter;
-  ProductSortBy _sortBy = ProductSortBy.name;
-  SortDirection _sortDirection = SortDirection.asc;
+  final List<Product> _allProducts = <Product>[];
   final List<Product> _products = <Product>[];
   final Set<String> _seenProductIds = <String>{};
   bool _hasLoadedProducts = false;
   ProductNewNotification? _newProductNotification;
+  Timer? _searchDebounce;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get includeDeleted => _includeDeleted;
+  bool get includeDeleted => true;
   String get search => _search;
   ProductCategory? get categoryFilter => _categoryFilter;
   ProductStatus? get statusFilter => _statusFilter;
-  ProductSortBy get sortBy => _sortBy;
-  SortDirection get sortDirection => _sortDirection;
   List<Product> get products => _products;
   ProductNewNotification? get newProductNotification => _newProductNotification;
 
@@ -63,22 +64,14 @@ class ProductManagementController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final trimmedSearch = _search.trim();
       final page = await _getProductsUseCase(
-        ProductQuery(
-          limit: 50,
-          includeDeleted: _includeDeleted,
-          category: _categoryFilter,
-          status: _statusFilter,
-          sortBy: _sortBy,
-          sortDirection: _sortDirection,
-          search: trimmedSearch.length >= 2 ? trimmedSearch : null,
-        ),
+        const ProductQuery(limit: 50, includeDeleted: true),
       );
-      _products
+      _allProducts
         ..clear()
         ..addAll(page.data);
       _trackNewProducts(page.data);
+      _applyLocalFilters();
     } catch (error) {
       _errorMessage = '$error';
     } finally {
@@ -87,52 +80,39 @@ class ProductManagementController extends ChangeNotifier {
     }
   }
 
-  Future<void> toggleIncludeDeleted(bool value) async {
-    _includeDeleted = value;
-    await loadProducts();
-  }
-
   void setSearch(String value) {
     _search = value;
+    _errorMessage = null;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      _applyLocalFilters();
+      notifyListeners();
+    });
+  }
+
+  void setCategoryFilter(ProductCategory? value) {
+    _categoryFilter = value;
+    _applyLocalFilters();
     notifyListeners();
   }
 
-  Future<void> setCategoryFilter(ProductCategory? value) async {
-    _categoryFilter = value;
-    await loadProducts();
-  }
-
-  Future<void> setStatusFilter(ProductStatus? value) async {
+  void setStatusFilter(ProductStatus? value) {
     _statusFilter = value;
-    await loadProducts();
+    _applyLocalFilters();
+    notifyListeners();
   }
 
-  Future<void> setSortBy(ProductSortBy value) async {
-    _sortBy = value;
-    await loadProducts();
-  }
-
-  Future<void> setSortDirection(SortDirection value) async {
-    _sortDirection = value;
-    await loadProducts();
-  }
-
-  Future<void> applySearch() async {
-    final trimmed = _search.trim();
-    if (trimmed.isNotEmpty && trimmed.length < 2) {
-      _errorMessage = 'Pencarian minimal 2 karakter sesuai API spec.';
-      notifyListeners();
-      return;
-    }
-    await loadProducts();
+  void applySearch() {
+    _searchDebounce?.cancel();
+    _applyLocalFilters();
+    notifyListeners();
   }
 
   Future<void> clearFilters() async {
+    _searchDebounce?.cancel();
     _search = '';
     _categoryFilter = null;
     _statusFilter = null;
-    _sortBy = ProductSortBy.name;
-    _sortDirection = SortDirection.asc;
     _errorMessage = null;
     await loadProducts();
   }
@@ -181,16 +161,15 @@ class ProductManagementController extends ChangeNotifier {
           : _products[deletedIndex];
 
       await _deleteProductUseCase(id);
-      _includeDeleted = true;
       await loadProducts();
 
-      if (_includeDeleted &&
-          productBeforeDelete != null &&
-          !_products.any((product) => product.id == id)) {
-        _products.insert(
-          deletedIndex.clamp(0, _products.length),
+      if (productBeforeDelete != null &&
+          !_allProducts.any((product) => product.id == id)) {
+        _allProducts.insert(
+          deletedIndex.clamp(0, _allProducts.length),
           _asSoftDeleted(productBeforeDelete),
         );
+        _applyLocalFilters();
         notifyListeners();
       }
     } catch (error) {
@@ -205,8 +184,9 @@ class ProductManagementController extends ChangeNotifier {
       final restored = await _restoreProductUseCase(id);
       await loadProducts();
 
-      if (!_products.any((product) => product.id == restored.id)) {
-        _products.add(restored);
+      if (!_allProducts.any((product) => product.id == restored.id)) {
+        _allProducts.add(restored);
+        _applyLocalFilters();
         notifyListeners();
       }
     } catch (error) {
@@ -254,5 +234,34 @@ class ProductManagementController extends ChangeNotifier {
       ..clear()
       ..addAll(products.map((product) => product.id));
     _hasLoadedProducts = true;
+  }
+
+  void _applyLocalFilters() {
+    final normalizedSearch = _search.trim().toLowerCase();
+    final hasSearch = normalizedSearch.length >= 2;
+
+    _products
+      ..clear()
+      ..addAll(
+        _allProducts.where((product) {
+          if (hasSearch &&
+              !product.name.toLowerCase().contains(normalizedSearch)) {
+            return false;
+          }
+          if (_categoryFilter != null && product.category != _categoryFilter) {
+            return false;
+          }
+          if (_statusFilter != null && product.status != _statusFilter) {
+            return false;
+          }
+          return true;
+        }),
+      );
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }

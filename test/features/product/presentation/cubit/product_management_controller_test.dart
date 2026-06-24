@@ -110,6 +110,7 @@ Product _product({
   required String id,
   required String name,
   required ProductStatus status,
+  ProductCategory category = ProductCategory.coffee,
   DateTime? deletedAt,
 }) {
   final now = DateTime(2026, 1, 1);
@@ -118,7 +119,7 @@ Product _product({
     name: name,
     description: 'Product description',
     price: 24000,
-    category: ProductCategory.coffee,
+    category: category,
     status: status,
     imageUrl: 'https://invalid.example/$id.png',
     rating: 4.4,
@@ -159,6 +160,101 @@ Product _copyProduct(
 }
 
 void main() {
+  test('loadProducts always requests soft-deleted products', () async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+    ]);
+    final controller = _controller(repository);
+    addTearDown(controller.dispose);
+
+    await controller.loadProducts();
+
+    expect(repository.queries.single.includeDeleted, isTrue);
+  });
+
+  test('search filters loaded products after debounce', () async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+      _product(
+        id: 'product-2',
+        name: 'Espresso',
+        status: ProductStatus.available,
+      ),
+    ]);
+    final controller = _controller(repository);
+    addTearDown(controller.dispose);
+
+    await controller.loadProducts();
+    controller.setSearch('lat');
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    expect(controller.products.map((product) => product.name), <String>[
+      'Latte',
+    ]);
+    expect(repository.queries, hasLength(1));
+  });
+
+  test('category and status filters are applied locally', () async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+      _product(
+        id: 'product-2',
+        name: 'Croissant',
+        category: ProductCategory.food,
+        status: ProductStatus.outOfStock,
+      ),
+      _product(
+        id: 'product-3',
+        name: 'Sandwich',
+        category: ProductCategory.food,
+        status: ProductStatus.available,
+      ),
+    ]);
+    final controller = _controller(repository);
+    addTearDown(controller.dispose);
+
+    await controller.loadProducts();
+    controller.setCategoryFilter(ProductCategory.food);
+    controller.setStatusFilter(ProductStatus.outOfStock);
+
+    expect(controller.products.map((product) => product.name), <String>[
+      'Croissant',
+    ]);
+    expect(repository.queries, hasLength(1));
+  });
+
+  test(
+    'clearFilters reloads products so external changes can appear',
+    () async {
+      final repository = _FakeProductRepository(<Product>[
+        _product(
+          id: 'product-1',
+          name: 'Latte',
+          status: ProductStatus.available,
+        ),
+      ]);
+      final controller = _controller(repository);
+      addTearDown(controller.dispose);
+
+      await controller.loadProducts();
+      repository._products.add(
+        _product(
+          id: 'product-2',
+          name: 'Espresso',
+          status: ProductStatus.available,
+        ),
+      );
+
+      await controller.clearFilters();
+
+      expect(repository.queries, hasLength(2));
+      expect(controller.products.map((product) => product.name), <String>[
+        'Latte',
+        'Espresso',
+      ]);
+    },
+  );
+
   test(
     'deleteProduct keeps a soft-deleted item visible when refresh omits it',
     () async {
@@ -172,7 +268,7 @@ void main() {
       final controller = _controller(repository);
       addTearDown(controller.dispose);
 
-      await controller.toggleIncludeDeleted(true);
+      await controller.loadProducts();
       await controller.deleteProduct('product-1');
 
       expect(controller.includeDeleted, isTrue);
@@ -197,8 +293,6 @@ void main() {
       addTearDown(controller.dispose);
 
       await controller.loadProducts();
-      expect(controller.includeDeleted, isFalse);
-
       await controller.deleteProduct('product-1');
 
       expect(controller.includeDeleted, isTrue);
@@ -223,7 +317,7 @@ void main() {
       final controller = _controller(repository);
       addTearDown(controller.dispose);
 
-      await controller.toggleIncludeDeleted(true);
+      await controller.loadProducts();
       await controller.restoreProduct('product-1');
 
       expect(controller.products, hasLength(1));

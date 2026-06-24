@@ -31,11 +31,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     super.initState();
     _controller = widget.controller;
     _searchController = TextEditingController(text: _controller.search);
-    if (widget.role == UserRole.admin && !_controller.includeDeleted) {
-      _controller.toggleIncludeDeleted(true);
-    } else {
-      _controller.loadProducts();
-    }
+    _controller.loadProducts();
   }
 
   @override
@@ -185,16 +181,6 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: _controller.applySearch,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A3A16),
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.search),
-                label: const Text('Cari'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
                 onPressed: isAdmin ? () => _openCreateDialog(context) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD88A16),
@@ -251,52 +237,6 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                     ],
                   ),
                 ),
-              ),
-              _dropdownShell(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<ProductSortBy>(
-                    value: _controller.sortBy,
-                    onChanged: (value) {
-                      if (value != null) {
-                        _controller.setSortBy(value);
-                      }
-                    },
-                    items: ProductSortBy.values
-                        .map(
-                          (value) => DropdownMenuItem<ProductSortBy>(
-                            value: value,
-                            child: Text('Sort: ${value.value}'),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-              _dropdownShell(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<SortDirection>(
-                    value: _controller.sortDirection,
-                    onChanged: (value) {
-                      if (value != null) {
-                        _controller.setSortDirection(value);
-                      }
-                    },
-                    items: SortDirection.values
-                        .map(
-                          (value) => DropdownMenuItem<SortDirection>(
-                            value: value,
-                            child: Text('Arah: ${value.value}'),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-              FilterChip(
-                label: const Text('Include soft-deleted'),
-                selected: _controller.includeDeleted,
-                onSelected: isAdmin ? _controller.toggleIncludeDeleted : null,
-                selectedColor: const Color(0x1AD88A16),
               ),
               TextButton.icon(
                 onPressed: () {

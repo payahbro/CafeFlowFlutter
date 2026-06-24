@@ -137,14 +137,19 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
   Widget _buildCategoryFilter() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _categoryButton('Semua', null),
-          _categoryButton('Coffee', ProductCategory.coffee),
-          _categoryButton('Makanan', ProductCategory.food),
-          _categoryButton('Snak', ProductCategory.snack),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _categoryButton('Semua', null),
+            const SizedBox(width: 8),
+            _categoryButton('Coffee', ProductCategory.coffee),
+            const SizedBox(width: 8),
+            _categoryButton('Makanan', ProductCategory.food),
+            const SizedBox(width: 8),
+            _categoryButton('Snack', ProductCategory.snack),
+          ],
+        ),
       ),
     );
   }

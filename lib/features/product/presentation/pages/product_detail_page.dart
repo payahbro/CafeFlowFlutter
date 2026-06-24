@@ -36,6 +36,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     _controller = ProductDetailController(widget.getProductDetailUseCase);
     if (widget.initialProduct != null) {
       _controller.setProduct(widget.initialProduct!);
+      _controller.load(widget.productId, keepCurrentProductVisible: true);
     } else {
       _controller.load(widget.productId);
     }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cafe/features/cart/domain/entities/cart.dart';
 import 'package:cafe/features/cart/domain/entities/cart_item.dart';
 import 'package:cafe/features/cart/domain/repositories/cart_repository.dart';
@@ -15,13 +17,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeProductRepository implements ProductRepository {
-  _FakeProductRepository(this._product);
+  _FakeProductRepository(this._product, {Future<Product>? detailFuture})
+    : _detailFuture = detailFuture;
 
   final Product _product;
+  final Future<Product>? _detailFuture;
+  int getDetailCallCount = 0;
 
   @override
   Future<Product> getProductDetail(String id) async {
-    return _product;
+    getDetailCallCount += 1;
+    return _detailFuture ?? _product;
   }
 
   @override
@@ -103,12 +109,13 @@ Product _baseProduct({
   required ProductAttributes attributes,
   ProductStatus status = ProductStatus.available,
   double rating = 0,
+  String description = 'Espresso dengan air panas',
 }) {
   final now = DateTime(2026, 1, 1);
   return Product(
     id: 'uuid',
     name: 'Americano',
-    description: 'Espresso dengan air panas',
+    description: description,
     price: 25000,
     category: category,
     status: status,
@@ -122,6 +129,53 @@ Product _baseProduct({
 }
 
 void main() {
+  testWidgets(
+    'Initial catalog product is refreshed with the complete product detail',
+    (tester) async {
+      final initialProduct = _baseProduct(
+        category: ProductCategory.snack,
+        attributes: const ProductAttributes(
+          portions: <String>['regular', 'large'],
+        ),
+        description: '',
+      );
+      final detailedProduct = _baseProduct(
+        category: ProductCategory.snack,
+        attributes: const ProductAttributes(
+          portions: <String>['regular', 'large'],
+        ),
+        description: 'Deskripsi lengkap dari backend',
+      );
+      final detailCompleter = Completer<Product>();
+      final repository = _FakeProductRepository(
+        detailedProduct,
+        detailFuture: detailCompleter.future,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ProductDetailPage(
+            productId: initialProduct.id,
+            initialProduct: initialProduct,
+            getProductDetailUseCase: GetProductDetailUseCase(repository),
+            addCartItemUseCase: AddCartItemUseCase(_FakeCartRepository()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('"Deskripsi produk belum tersedia"'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(repository.getDetailCallCount, 1);
+
+      detailCompleter.complete(detailedProduct);
+      await tester.pumpAndSettle();
+
+      expect(find.text('"Deskripsi lengkap dari backend"'), findsOneWidget);
+      expect(find.text('"Deskripsi produk belum tersedia"'), findsNothing);
+    },
+  );
+
   testWidgets('Phone layout keeps image height and uses compact controls', (
     tester,
   ) async {

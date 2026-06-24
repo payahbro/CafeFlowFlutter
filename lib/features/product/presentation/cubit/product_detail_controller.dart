@@ -32,8 +32,8 @@ class ProductDetailController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> load(String id) async {
-    _isLoading = true;
+  Future<void> load(String id, {bool keepCurrentProductVisible = false}) async {
+    _isLoading = !keepCurrentProductVisible || _product == null;
     _errorMessage = null;
     notifyListeners();
 
@@ -41,7 +41,9 @@ class ProductDetailController extends ChangeNotifier {
       _product = await _getProductDetailUseCase(id);
       _primeDefaultSelections();
     } catch (error) {
-      _errorMessage = '$error';
+      if (!keepCurrentProductVisible || _product == null) {
+        _errorMessage = '$error';
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -97,13 +99,13 @@ class ProductDetailController extends ChangeNotifier {
 
   Map<String, String> selectedAttributes() {
     return <String, String>{
-      if (selectedTemperature != null) 'temperature': selectedTemperature!,
-      if (selectedSize != null) 'sizes': selectedSize!,
-      if (selectedSugarLevel != null) 'sugar_levels': selectedSugarLevel!,
+      'temperature': ?selectedTemperature,
+      'sizes': ?selectedSize,
+      'sugar_levels': ?selectedSugarLevel,
       if (selectedTemperature == 'iced' && selectedIceLevel != null)
         'ice_levels': selectedIceLevel!,
-      if (selectedPortion != null) 'portions': selectedPortion!,
-      if (selectedSpicyLevel != null) 'spicy_levels': selectedSpicyLevel!,
+      'portions': ?selectedPortion,
+      'spicy_levels': ?selectedSpicyLevel,
     };
   }
 

@@ -42,6 +42,7 @@ class OrderModule {
 
   OrderListController createOrderListController({
     required UserRole role,
+    String? initialAdminOrderId,
     String? initialAdminUserId,
     OrderStatus? initialStatus,
   }) {
@@ -50,6 +51,7 @@ class OrderModule {
       cancelOrderUseCase: cancelOrderUseCase,
       updateOrderStatusUseCase: updateOrderStatusUseCase,
       role: role,
+      initialAdminOrderId: initialAdminOrderId,
       initialAdminUserId: initialAdminUserId,
       initialStatus: initialStatus,
     );

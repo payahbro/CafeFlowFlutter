@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cafe/features/order/domain/entities/order_list_item.dart';
 import 'package:cafe/features/order/domain/entities/order_query.dart';
 import 'package:cafe/features/order/domain/entities/order_status.dart';
 import 'package:cafe/features/order/domain/usecases/cancel_order_usecase.dart';
@@ -16,6 +17,7 @@ class OrderListController extends ChangeNotifier {
     required CancelOrderUseCase cancelOrderUseCase,
     required UpdateOrderStatusUseCase updateOrderStatusUseCase,
     required UserRole role,
+    String? initialAdminOrderId,
     String? initialAdminUserId,
     OrderStatus? initialStatus,
   }) : _getOrdersUseCase = getOrdersUseCase,
@@ -25,6 +27,7 @@ class OrderListController extends ChangeNotifier {
        _state = OrderListState.initial(
          query: OrderQuery(
            limit: 10,
+           orderId: role == UserRole.admin ? initialAdminOrderId : null,
            status: initialStatus,
            userId: role == UserRole.admin ? initialAdminUserId : null,
          ),
@@ -60,7 +63,7 @@ class OrderListController extends ChangeNotifier {
     try {
       final page = await _getOrdersUseCase(query);
       _state = _state.copyWith(
-        orders: page.data,
+        orders: _filterOrdersForQuery(page.data, query),
         isLoading: false,
         isPaginating: false,
         errorMessage: null,
@@ -96,20 +99,69 @@ class OrderListController extends ChangeNotifier {
     await fetchInitial();
   }
 
+  Future<void> applyAdminOrderFilter(String? orderId) async {
+    if (_role != UserRole.admin) {
+      return;
+    }
+
+    await applyAdminIdFilter(orderId);
+  }
+
+  Future<void> applyAdminIdFilter(String? id) async {
+    if (_role != UserRole.admin) {
+      return;
+    }
+
+    final normalized = id?.trim();
+    _state = _state.copyWith(
+      query: _state.query.copyWith(
+        idSearch: (normalized == null || normalized.isEmpty)
+            ? null
+            : normalized,
+        orderId: null,
+        userId: null,
+        cursor: null,
+        direction: 'next',
+      ),
+    );
+    notifyListeners();
+    await fetchInitial();
+  }
+
+  Future<void> applyAdminIdFilters({String? orderId, String? userId}) async {
+    if (_role != UserRole.admin) {
+      return;
+    }
+
+    final normalizedOrderId = orderId?.trim();
+    final normalizedUserId = userId?.trim();
+    _state = _state.copyWith(
+      query: _state.query.copyWith(
+        idSearch: null,
+        orderId: (normalizedOrderId == null || normalizedOrderId.isEmpty)
+            ? null
+            : normalizedOrderId,
+        userId: (normalizedUserId == null || normalizedUserId.isEmpty)
+            ? null
+            : normalizedUserId,
+        cursor: null,
+        direction: 'next',
+      ),
+    );
+    notifyListeners();
+    await fetchInitial();
+  }
+
   Future<void> applyAdminUserFilter(String? userId) async {
     if (_role != UserRole.admin) {
       return;
     }
 
     final normalized = userId?.trim();
-    _state = _state.copyWith(
-      query: _state.query.copyWith(
-        userId: (normalized == null || normalized.isEmpty) ? null : normalized,
-        cursor: null,
-      ),
+    await applyAdminIdFilters(
+      orderId: _state.query.orderId,
+      userId: normalized,
     );
-    notifyListeners();
-    await fetchInitial();
   }
 
   Future<void> fetchNextPage() async {
@@ -121,11 +173,13 @@ class OrderListController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final page = await _getOrdersUseCase(
-        _state.query.copyWith(cursor: _state.nextCursor, direction: 'next'),
+      final query = _state.query.copyWith(
+        cursor: _state.nextCursor,
+        direction: 'next',
       );
+      final page = await _getOrdersUseCase(query);
       _state = _state.copyWith(
-        orders: page.data,
+        orders: _filterOrdersForQuery(page.data, query),
         isPaginating: false,
         nextCursor: page.nextCursor,
         prevCursor: page.prevCursor,
@@ -151,11 +205,13 @@ class OrderListController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final page = await _getOrdersUseCase(
-        _state.query.copyWith(cursor: _state.prevCursor, direction: 'prev'),
+      final query = _state.query.copyWith(
+        cursor: _state.prevCursor,
+        direction: 'prev',
       );
+      final page = await _getOrdersUseCase(query);
       _state = _state.copyWith(
-        orders: page.data,
+        orders: _filterOrdersForQuery(page.data, query),
         isPaginating: false,
         nextCursor: page.nextCursor,
         prevCursor: page.prevCursor,
@@ -170,6 +226,38 @@ class OrderListController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  List<OrderListItem> _filterOrdersForQuery(
+    List<OrderListItem> orders,
+    OrderQuery query,
+  ) {
+    final orderNeedle = query.orderId?.trim().toLowerCase() ?? '';
+    final idSearchNeedle = query.idSearch?.trim().toLowerCase() ?? '';
+    final userNeedle = query.userId?.trim().toLowerCase() ?? '';
+    final hasOrderFilter = orderNeedle.isNotEmpty;
+    final hasIdSearchFilter = idSearchNeedle.isNotEmpty;
+    final hasUserFilter = userNeedle.isNotEmpty;
+
+    if (!hasIdSearchFilter && !hasOrderFilter && !hasUserFilter) {
+      return orders;
+    }
+
+    return orders.where((order) {
+      final userId = order.userId?.toLowerCase() ?? '';
+      final matchesIdSearch =
+          !hasIdSearchFilter ||
+          order.orderId.toLowerCase().contains(idSearchNeedle) ||
+          order.orderNumber.toLowerCase().contains(idSearchNeedle) ||
+          userId.contains(idSearchNeedle);
+      final matchesOrder =
+          !hasOrderFilter ||
+          order.orderId.toLowerCase().contains(orderNeedle) ||
+          order.orderNumber.toLowerCase().contains(orderNeedle);
+      final matchesUser = !hasUserFilter || userId.contains(userNeedle);
+
+      return matchesIdSearch && matchesOrder && matchesUser;
+    }).toList();
   }
 
   Future<void> cancelOrder(String orderId) async {

@@ -27,21 +27,25 @@ class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
   static const double _contentMaxWidth = 900;
 
   late final OrderListController _controller;
-  late final TextEditingController _userFilterController;
+  late final TextEditingController _idFilterController;
 
   @override
   void initState() {
     super.initState();
     _controller = widget.controller;
-    _userFilterController = TextEditingController(
-      text: _controller.state.query.userId ?? '',
+    _idFilterController = TextEditingController(
+      text:
+          _controller.state.query.idSearch ??
+          _controller.state.query.orderId ??
+          _controller.state.query.userId ??
+          '',
     );
     _controller.start();
   }
 
   @override
   void dispose() {
-    _userFilterController.dispose();
+    _idFilterController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -213,16 +217,18 @@ class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: _userFilterController,
+                  controller: _idFilterController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _applyIdFilter(),
                   decoration: OrderUiTokens.inputDecoration(
-                    hintText: 'Filter user_id (opsional)',
-                    prefixIcon: const Icon(Icons.person_search_rounded),
+                    hintText: 'Filter order ID',
+                    prefixIcon: const Icon(Icons.search_rounded),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: _applyUserFilter,
+                onPressed: _applyIdFilter,
                 style: OrderUiTokens.primaryButtonStyle(),
                 child: const Text('Terapkan'),
               ),
@@ -336,13 +342,13 @@ class _AdminOrderManagementPageState extends State<AdminOrderManagementPage> {
     );
   }
 
-  Future<void> _applyUserFilter() {
-    return _controller.applyAdminUserFilter(_userFilterController.text);
+  Future<void> _applyIdFilter() {
+    return _controller.applyAdminIdFilter(_idFilterController.text);
   }
 
   Future<void> _resetFilters() async {
-    _userFilterController.clear();
-    await _controller.applyAdminUserFilter(null);
+    _idFilterController.clear();
+    await _controller.applyAdminIdFilter(null);
     await _controller.applyStatusFilter(null);
   }
 

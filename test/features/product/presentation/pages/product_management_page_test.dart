@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:cafe/features/product/data/services/product_image_picker.dart';
+import 'package:cafe/features/product/data/services/product_image_uploader.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -23,6 +28,8 @@ class _FakeProductRepository implements ProductRepository {
   final List<Product> products;
   final List<ProductQuery> queries = <ProductQuery>[];
   bool omitDeletedProductsFromList = false;
+  UpsertProductInput? lastCreateInput;
+  UpsertProductInput? lastUpdateInput;
 
   @override
   Future<ProductListPage> getProducts(ProductQuery query) async {
@@ -46,6 +53,7 @@ class _FakeProductRepository implements ProductRepository {
 
   @override
   Future<Product> createProduct(UpsertProductInput input) async {
+    lastCreateInput = input;
     final product = Product(
       id: 'created-${products.length + 1}',
       name: input.name ?? 'Created Product',
@@ -102,12 +110,48 @@ class _FakeProductRepository implements ProductRepository {
 
   @override
   Future<Product> updateProduct(String id, UpsertProductInput input) async {
+    lastUpdateInput = input;
     return products.singleWhere((product) => product.id == id);
   }
 
   @override
   Future<Product> updateProductStatus(String id, String status) async {
     return products.singleWhere((product) => product.id == id);
+  }
+}
+
+class _FakeProductImagePicker implements ProductImagePicker {
+  _FakeProductImagePicker(this.image);
+
+  final ProductImageFile? image;
+  ProductImageSource? lastSource;
+
+  @override
+  Future<ProductImageFile?> pick(ProductImageSource source) async {
+    lastSource = source;
+    return image;
+  }
+}
+
+class _FakeProductImageUploader implements ProductImageUploader {
+  _FakeProductImageUploader({this.error});
+
+  final Object? error;
+  ProductImageFile? uploadedImage;
+  String? uploadedProductName;
+  String get result =>
+      'https://kangzprbrstwuuejpmso.supabase.co/storage/v1/object/public/'
+      'products/uploaded.jpg';
+
+  @override
+  Future<String> upload({
+    required ProductImageFile image,
+    required String productName,
+  }) async {
+    uploadedImage = image;
+    uploadedProductName = productName;
+    if (error != null) throw error!;
+    return result;
   }
 }
 
@@ -179,10 +223,17 @@ Future<void> _pumpPage(
   WidgetTester tester, {
   required ProductManagementController controller,
   UserRole role = UserRole.admin,
+  ProductImagePicker? imagePicker,
+  ProductImageUploader? imageUploader,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      home: ProductManagementPage(role: role, controller: controller),
+      home: ProductManagementPage(
+        role: role,
+        controller: controller,
+        imagePicker: imagePicker ?? _FakeProductImagePicker(null),
+        imageUploader: imageUploader ?? _FakeProductImageUploader(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -397,5 +448,127 @@ void main() {
     expect(find.text('Produk baru tersedia'), findsOneWidget);
     expect(find.text('Matcha Latte'), findsWidgets);
     expect(find.text('Produk berhasil ditambahkan.'), findsOneWidget);
+  });
+
+  testWidgets('gallery photo is previewed and uploaded when product is saved', (
+    tester,
+  ) async {
+    final repository = _FakeProductRepository(<Product>[]);
+    final image = ProductImageFile(
+      bytes: base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk'
+        'YAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      ),
+      fileName: 'latte.png',
+      contentType: 'image/png',
+    );
+    final picker = _FakeProductImagePicker(image);
+    final uploader = _FakeProductImageUploader();
+
+    await _pumpPage(
+      tester,
+      controller: _controller(repository),
+      imagePicker: picker,
+      imageUploader: uploader,
+    );
+
+    await tester.tap(find.text('Tambah'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+
+    expect(picker.lastSource, ProductImageSource.gallery);
+    expect(find.byKey(const Key('product-image-preview')), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Gallery Latte');
+    await tester.enterText(find.byType(TextFormField).at(2), '28000');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(uploader.uploadedImage, same(image));
+    expect(uploader.uploadedProductName, 'Gallery Latte');
+    expect(repository.lastCreateInput?.imageUrl, uploader.result);
+  });
+
+  testWidgets('camera button requests a camera image', (tester) async {
+    final picker = _FakeProductImagePicker(null);
+
+    await _pumpPage(
+      tester,
+      controller: _controller(_FakeProductRepository(<Product>[])),
+      imagePicker: picker,
+    );
+
+    await tester.tap(find.text('Tambah'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kamera'));
+    await tester.pumpAndSettle();
+
+    expect(picker.lastSource, ProductImageSource.camera);
+  });
+
+  testWidgets('failed photo upload keeps the product form open', (
+    tester,
+  ) async {
+    final image = ProductImageFile(
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      fileName: 'latte.jpg',
+      contentType: 'image/jpeg',
+    );
+    final uploader = _FakeProductImageUploader(
+      error: StateError('storage rejected upload'),
+    );
+
+    await _pumpPage(
+      tester,
+      controller: _controller(_FakeProductRepository(<Product>[])),
+      imagePicker: _FakeProductImagePicker(image),
+      imageUploader: uploader,
+    );
+
+    await tester.tap(find.text('Tambah'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'Failed Latte');
+    await tester.enterText(find.byType(TextFormField).at(2), '28000');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Product'), findsOneWidget);
+    expect(find.textContaining('storage rejected upload'), findsOneWidget);
+  });
+
+  testWidgets('edit product can replace its image from the gallery', (
+    tester,
+  ) async {
+    final repository = _FakeProductRepository(<Product>[
+      _product(id: 'product-1', name: 'Latte', status: ProductStatus.available),
+    ]);
+    final image = ProductImageFile(
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+      fileName: 'replacement.jpg',
+      contentType: 'image/jpeg',
+    );
+    final uploader = _FakeProductImageUploader();
+
+    await _pumpPage(
+      tester,
+      controller: _controller(repository),
+      imagePicker: _FakeProductImagePicker(image),
+      imageUploader: uploader,
+    );
+
+    await tester.tap(find.text('Latte'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit produk'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Galeri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(uploader.uploadedProductName, 'Latte');
+    expect(repository.lastUpdateInput?.imageUrl, uploader.result);
   });
 }

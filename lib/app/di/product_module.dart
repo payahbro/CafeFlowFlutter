@@ -3,6 +3,8 @@ import 'package:cafe/core/network/api_client.dart';
 import 'package:cafe/core/network/auth_token_provider.dart';
 import 'package:cafe/features/product/data/datasources/product_remote_data_source.dart';
 import 'package:cafe/features/product/data/repositories/product_repository_impl.dart';
+import 'package:cafe/features/product/data/services/product_image_picker.dart';
+import 'package:cafe/features/product/data/services/product_image_uploader.dart';
 import 'package:cafe/features/product/domain/usecases/create_product_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/delete_product_usecase.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
@@ -14,9 +16,10 @@ import 'package:cafe/features/product/presentation/cubit/product_management_cont
 
 class ProductModule {
   ProductModule({AuthTokenProvider? authTokenProvider}) {
+    final tokenProvider = authTokenProvider ?? () => null;
     final apiClient = ApiClient(
       baseUrl: AppConfig.productBaseUrl,
-      authTokenProvider: authTokenProvider,
+      authTokenProvider: tokenProvider,
     );
     final remote = ProductRemoteDataSourceImpl(apiClient);
     final repository = ProductRepositoryImpl(remote);
@@ -28,6 +31,12 @@ class ProductModule {
     updateProductStatusUseCase = UpdateProductStatusUseCase(repository);
     deleteProductUseCase = DeleteProductUseCase(repository);
     restoreProductUseCase = RestoreProductUseCase(repository);
+    productImagePicker = DeviceProductImagePicker();
+    productImageUploader = SupabaseProductImageUploader(
+      supabaseUrl: AppConfig.supabaseUrl,
+      anonKey: AppConfig.supabaseAnonKey,
+      authTokenProvider: tokenProvider,
+    );
 
     productManagementController = createProductManagementController();
   }
@@ -50,5 +59,7 @@ class ProductModule {
   late final UpdateProductStatusUseCase updateProductStatusUseCase;
   late final DeleteProductUseCase deleteProductUseCase;
   late final RestoreProductUseCase restoreProductUseCase;
+  late final ProductImagePicker productImagePicker;
+  late final ProductImageUploader productImageUploader;
   late final ProductManagementController productManagementController;
 }

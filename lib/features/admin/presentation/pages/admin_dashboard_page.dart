@@ -261,6 +261,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         builder: (_) => ProductManagementPage(
           role: widget.role,
           controller: widget.productModule.createProductManagementController(),
+          imagePicker: widget.productModule.productImagePicker,
+          imageUploader: widget.productModule.productImageUploader,
         ),
       ),
     );

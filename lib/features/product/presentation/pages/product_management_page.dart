@@ -1,3 +1,6 @@
+import 'package:cafe/core/errors/app_exception.dart';
+import 'package:cafe/features/product/data/services/product_image_picker.dart';
+import 'package:cafe/features/product/data/services/product_image_uploader.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_attributes.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
@@ -13,10 +16,14 @@ class ProductManagementPage extends StatefulWidget {
     super.key,
     required this.role,
     required this.controller,
+    required this.imagePicker,
+    required this.imageUploader,
   });
 
   final UserRole role;
   final ProductManagementController controller;
+  final ProductImagePicker imagePicker;
+  final ProductImageUploader imageUploader;
 
   @override
   State<ProductManagementPage> createState() => _ProductManagementPageState();
@@ -268,7 +275,10 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
   Future<void> _openCreateDialog(BuildContext context) async {
     final result = await showDialog<UpsertProductInput>(
       context: context,
-      builder: (_) => const _ProductFormDialog(),
+      builder: (_) => _ProductFormDialog(
+        imagePicker: widget.imagePicker,
+        imageUploader: widget.imageUploader,
+      ),
     );
     if (!context.mounted || result == null) return;
 
@@ -318,7 +328,11 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                         Navigator.pop(ctx);
                         final result = await showDialog<UpsertProductInput>(
                           context: context,
-                          builder: (_) => _ProductFormDialog(existing: product),
+                          builder: (_) => _ProductFormDialog(
+                            existing: product,
+                            imagePicker: widget.imagePicker,
+                            imageUploader: widget.imageUploader,
+                          ),
                         );
                         if (result == null) return;
                         await _controller.updateProduct(product.id, result);
@@ -482,9 +496,15 @@ class _ProductTile extends StatelessWidget {
 }
 
 class _ProductFormDialog extends StatefulWidget {
-  const _ProductFormDialog({this.existing});
+  const _ProductFormDialog({
+    this.existing,
+    required this.imagePicker,
+    required this.imageUploader,
+  });
 
   final Product? existing;
+  final ProductImagePicker imagePicker;
+  final ProductImageUploader imageUploader;
 
   @override
   State<_ProductFormDialog> createState() => _ProductFormDialogState();
@@ -504,6 +524,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late Set<String> _sizes;
   late Set<String> _portions;
   late Set<String> _spicyLevels;
+  ProductImageFile? _selectedImage;
+  String? _imageError;
+  bool _isSaving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -594,6 +617,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                   controller: _imageController,
                   decoration: const InputDecoration(labelText: 'Image URL'),
                   validator: (value) {
+                    if (_selectedImage != null) return null;
                     final text = value?.trim() ?? '';
                     final uri = Uri.tryParse(text);
                     if (text.isEmpty ||
@@ -605,6 +629,69 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isSaving
+                            ? null
+                            : () => _pickImage(ProductImageSource.camera),
+                        icon: const Icon(Icons.camera_alt_outlined),
+                        label: const Text('Kamera'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isSaving
+                            ? null
+                            : () => _pickImage(ProductImageSource.gallery),
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: const Text('Galeri'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_selectedImage != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      _selectedImage!.bytes,
+                      key: const Key('product-image-preview'),
+                      width: double.infinity,
+                      height: 160,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        height: 160,
+                        color: const Color(0xFFE8E8E8),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _isSaving
+                          ? null
+                          : () => setState(() => _selectedImage = null),
+                      icon: const Icon(Icons.close),
+                      label: const Text('Hapus foto pilihan'),
+                    ),
+                  ),
+                ],
+                if (_imageError != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _imageError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<ProductCategory>(
                   initialValue: _category,
@@ -659,51 +746,96 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
-            if (!_formKey.currentState!.validate()) return;
-            final attributes = _buildAttributesFromSelection();
-            final attrsError = _validateAttributes(attributes);
-            if (attrsError != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(attrsError)));
-              return;
-            }
-
-            final input = _isEdit
-                ? UpsertProductInput.fromProductEdit(
-                    original: widget.existing!,
-                    name: _nameController.text.trim(),
-                    description: _descriptionController.text.trim(),
-                    price: int.parse(_priceController.text.trim()),
-                    imageUrl: _imageController.text.trim(),
-                    category: _category,
-                    status: _status,
-                    attributes: attributes,
-                  )
-                : UpsertProductInput(
-                    name: _nameController.text.trim(),
-                    description: _descriptionController.text.trim(),
-                    price: int.parse(_priceController.text.trim()),
-                    imageUrl: _imageController.text.trim(),
-                    category: _category,
-                    status: _status,
-                    attributes: attributes,
-                  );
-            Navigator.pop(context, input);
-          },
+          onPressed: _isSaving ? null : _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF6A3A16),
             foregroundColor: Colors.white,
           ),
-          child: const Text('Save'),
+          child: _isSaving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Save'),
         ),
       ],
     );
+  }
+
+  Future<void> _pickImage(ProductImageSource source) async {
+    setState(() => _imageError = null);
+    try {
+      final image = await widget.imagePicker.pick(source);
+      if (!mounted || image == null) return;
+      setState(() => _selectedImage = image);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _imageError = 'Gagal memilih foto: $error');
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final attributes = _buildAttributesFromSelection();
+    final attrsError = _validateAttributes(attributes);
+    if (attrsError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(attrsError)));
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _imageError = null;
+    });
+
+    try {
+      var imageUrl = _imageController.text.trim();
+      if (_selectedImage != null) {
+        imageUrl = await widget.imageUploader.upload(
+          image: _selectedImage!,
+          productName: _nameController.text.trim(),
+        );
+      }
+      if (!mounted) return;
+
+      final input = _isEdit
+          ? UpsertProductInput.fromProductEdit(
+              original: widget.existing!,
+              name: _nameController.text.trim(),
+              description: _descriptionController.text.trim(),
+              price: int.parse(_priceController.text.trim()),
+              imageUrl: imageUrl,
+              category: _category,
+              status: _status,
+              attributes: attributes,
+            )
+          : UpsertProductInput(
+              name: _nameController.text.trim(),
+              description: _descriptionController.text.trim(),
+              price: int.parse(_priceController.text.trim()),
+              imageUrl: imageUrl,
+              category: _category,
+              status: _status,
+              attributes: attributes,
+            );
+      Navigator.pop(context, input);
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is AppException ? error.message : '$error';
+      setState(() {
+        _isSaving = false;
+        _imageError = 'Upload foto gagal: $message';
+      });
+    }
   }
 
   Widget _buildAttributeEditor() {

@@ -41,8 +41,11 @@ class _FakeProductRepository implements ProductRepository {
 
 class _FakeCartRepository implements CartRepository {
   @override
-  Future<Cart> addItem({required String productId, required int quantity}) =>
-      throw UnimplementedError();
+  Future<Cart> addItem({
+    required String productId,
+    required int quantity,
+    required Map<String, String> attributes,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> clearMyCart() => throw UnimplementedError();

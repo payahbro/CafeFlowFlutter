@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cafe/features/cart/domain/usecases/add_cart_item_usecase.dart';
+import 'package:cafe/features/cart/domain/services/checkout_attribute_resolver.dart';
 import 'package:cafe/features/product/domain/entities/product.dart';
 import 'package:cafe/features/product/domain/entities/product_enums.dart';
 import 'package:cafe/features/product/domain/usecases/get_product_detail_usecase.dart';
@@ -244,7 +245,11 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
     }
 
     try {
-      await widget.addCartItemUseCase(productId: product.id, quantity: 1);
+      await widget.addCartItemUseCase(
+        productId: product.id,
+        quantity: 1,
+        attributes: defaultCheckoutAttributes(product),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${product.name} ditambahkan ke keranjang')),

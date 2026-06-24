@@ -57,6 +57,7 @@ class _FakeProductRepository implements ProductRepository {
 
 class _FakeCartRepository implements CartRepository {
   int addItemCallCount = 0;
+  Map<String, String>? lastAttributes;
 
   static const Cart _emptyCart = Cart(
     cartId: null,
@@ -75,8 +76,10 @@ class _FakeCartRepository implements CartRepository {
   Future<Cart> addItem({
     required String productId,
     required int quantity,
+    required Map<String, String> attributes,
   }) async {
     addItemCallCount += 1;
+    lastAttributes = attributes;
     return _emptyCart;
   }
 
@@ -239,5 +242,41 @@ void main() {
 
     expect(cartRepository.addItemCallCount, 0);
     expect(find.text('Americano ditambahkan ke keranjang'), findsNothing);
+  });
+
+  testWidgets('Add to cart sends the selected food options', (tester) async {
+    final product = _baseProduct(
+      category: ProductCategory.food,
+      attributes: const ProductAttributes(
+        portions: <String>['regular', 'large'],
+        spicyLevels: <String>['no_spicy', 'mild', 'medium', 'hot'],
+      ),
+    );
+    final cartRepository = _FakeCartRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProductDetailPage(
+          productId: 'uuid',
+          getProductDetailUseCase: GetProductDetailUseCase(
+            _FakeProductRepository(product),
+          ),
+          addCartItemUseCase: AddCartItemUseCase(cartRepository),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Large'));
+    await tester.tap(find.text('Large'));
+    await tester.tap(find.text('Hot'));
+    await tester.ensureVisible(find.text('Add to Cart'));
+    await tester.tap(find.text('Add to Cart'));
+    await tester.pumpAndSettle();
+
+    expect(cartRepository.lastAttributes, <String, String>{
+      'portions': 'large',
+      'spicy_levels': 'hot',
+    });
   });
 }

@@ -216,11 +216,15 @@ class _CartPageState extends State<CartPage> {
     try {
       final checkoutItems = <OrderCheckoutItemInput>[];
       for (final item in selectedItems) {
-        final product = await widget.getProductDetailUseCase(item.productId);
+        var attributes = item.selectedAttributes;
+        if (attributes.isEmpty) {
+          final product = await widget.getProductDetailUseCase(item.productId);
+          attributes = defaultCheckoutAttributes(product);
+        }
         checkoutItems.add(
           OrderCheckoutItemInput(
             cartItemId: item.itemId,
-            attributes: defaultCheckoutAttributes(product),
+            attributes: attributes,
           ),
         );
       }
@@ -737,6 +741,23 @@ class _CartRow extends StatelessWidget {
                   const SizedBox(height: 6),
                   _ModifierChip(label: 'Unavailable', accentColor: accentColor),
                 ],
+                if (item.selectedAttributes.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: item.selectedAttributes.entries
+                        .map(
+                          (entry) => _ModifierChip(
+                            label:
+                                '${_formatAttributeLabel(entry.key)}: '
+                                '${_formatAttributeLabel(entry.value)}',
+                            accentColor: accentColor,
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   formatRupiah(item.price),
@@ -762,6 +783,16 @@ class _CartRow extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatAttributeLabel(String value) {
+  return value
+      .split('_')
+      .where((part) => part.isNotEmpty)
+      .map(
+        (part) => '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+      )
+      .join(' ');
 }
 
 class _RoundedCheckbox extends StatelessWidget {

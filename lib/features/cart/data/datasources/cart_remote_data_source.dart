@@ -4,7 +4,11 @@ import 'package:cafe/features/cart/data/models/cart_models.dart';
 abstract class CartRemoteDataSource {
   Future<CartModel> getMyCart();
 
-  Future<CartModel> addItem({required String productId, required int quantity});
+  Future<CartModel> addItem({
+    required String productId,
+    required int quantity,
+    required Map<String, String> attributes,
+  });
 
   Future<CartModel> updateItemQuantity({
     required String itemId,
@@ -33,10 +37,15 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   Future<CartModel> addItem({
     required String productId,
     required int quantity,
+    required Map<String, String> attributes,
   }) async {
     final response = await _apiClient.post(
       '/cart/items',
-      body: <String, dynamic>{'product_id': productId, 'quantity': quantity},
+      body: <String, dynamic>{
+        'product_id': productId,
+        'quantity': quantity,
+        'attributes': attributes,
+      },
     );
     final data =
         response['data'] as Map<String, dynamic>? ?? <String, dynamic>{};

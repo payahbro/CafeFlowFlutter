@@ -3,7 +3,11 @@ import 'package:cafe/features/cart/domain/entities/cart.dart';
 abstract class CartRepository {
   Future<Cart> getMyCart();
 
-  Future<Cart> addItem({required String productId, required int quantity});
+  Future<Cart> addItem({
+    required String productId,
+    required int quantity,
+    required Map<String, String> attributes,
+  });
 
   Future<Cart> updateItemQuantity({
     required String itemId,

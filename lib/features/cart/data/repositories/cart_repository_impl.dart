@@ -17,10 +17,12 @@ class CartRepositoryImpl implements CartRepository {
   Future<Cart> addItem({
     required String productId,
     required int quantity,
+    required Map<String, String> attributes,
   }) async {
     final model = await _remoteDataSource.addItem(
       productId: productId,
       quantity: quantity,
+      attributes: attributes,
     );
     return model.toEntity();
   }

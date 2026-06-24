@@ -11,6 +11,7 @@ class CartItemModel {
     required this.quantity,
     required this.subtotal,
     required this.isAvailable,
+    required this.selectedAttributes,
   });
 
   final String itemId;
@@ -21,6 +22,7 @@ class CartItemModel {
   final int quantity;
   final int subtotal;
   final bool isAvailable;
+  final Map<String, String> selectedAttributes;
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     return CartItemModel(
@@ -32,6 +34,7 @@ class CartItemModel {
       quantity: _intFromJson(json['quantity'], fallback: 1),
       subtotal: _intFromJson(json['subtotal']),
       isAvailable: json['is_available'] as bool? ?? false,
+      selectedAttributes: _stringMapFromJson(json['selected_attributes']),
     );
   }
 
@@ -45,6 +48,7 @@ class CartItemModel {
       quantity: quantity,
       subtotal: subtotal,
       isAvailable: isAvailable,
+      selectedAttributes: selectedAttributes,
     );
   }
 
@@ -52,6 +56,16 @@ class CartItemModel {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse('$value') ?? fallback;
+  }
+
+  static Map<String, String> _stringMapFromJson(dynamic value) {
+    if (value is! Map) {
+      return const <String, String>{};
+    }
+
+    return value.map(
+      (key, option) => MapEntry(key.toString(), option.toString()),
+    );
   }
 }
 

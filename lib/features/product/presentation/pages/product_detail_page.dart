@@ -826,6 +826,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       await widget.addCartItemUseCase(
         productId: product.id,
         quantity: _controller.quantity,
+        attributes: _controller.selectedAttributes(),
       );
 
       if (!mounted) return;

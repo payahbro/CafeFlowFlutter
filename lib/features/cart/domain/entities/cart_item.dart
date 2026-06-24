@@ -8,6 +8,7 @@ class CartItem {
     required this.quantity,
     required this.subtotal,
     required this.isAvailable,
+    this.selectedAttributes = const <String, String>{},
   });
 
   final String itemId;
@@ -18,4 +19,5 @@ class CartItem {
   final int quantity;
   final int subtotal;
   final bool isAvailable;
+  final Map<String, String> selectedAttributes;
 }

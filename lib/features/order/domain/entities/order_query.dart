@@ -7,7 +7,6 @@ class OrderQuery {
     this.cursor,
     this.direction = 'next',
     this.limit = 10,
-    this.idSearch,
     this.orderId,
     this.status,
     this.userId,
@@ -16,7 +15,6 @@ class OrderQuery {
   final String? cursor;
   final String direction;
   final int limit;
-  final String? idSearch;
   final String? orderId;
   final OrderStatus? status;
   final String? userId;
@@ -25,7 +23,6 @@ class OrderQuery {
     Object? cursor = _unset,
     String? direction,
     int? limit,
-    Object? idSearch = _unset,
     Object? orderId = _unset,
     Object? status = _unset,
     Object? userId = _unset,
@@ -34,11 +31,9 @@ class OrderQuery {
       cursor: identical(cursor, _unset) ? this.cursor : cursor as String?,
       direction: direction ?? this.direction,
       limit: limit ?? this.limit,
-      idSearch: identical(idSearch, _unset)
-          ? this.idSearch
-          : idSearch as String?,
       orderId: identical(orderId, _unset) ? this.orderId : orderId as String?,
       status: identical(status, _unset) ? this.status : status as OrderStatus?,
+      userId: identical(userId, _unset) ? this.userId : userId as String?,
     );
   }
 

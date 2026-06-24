@@ -104,46 +104,12 @@ class OrderListController extends ChangeNotifier {
       return;
     }
 
-    await applyAdminIdFilter(orderId);
-  }
-
-  Future<void> applyAdminIdFilter(String? id) async {
-    if (_role != UserRole.admin) {
-      return;
-    }
-
-    final normalized = id?.trim();
-    _state = _state.copyWith(
-      query: _state.query.copyWith(
-        idSearch: (normalized == null || normalized.isEmpty)
-            ? null
-            : normalized,
-        orderId: null,
-        userId: null,
-        cursor: null,
-        direction: 'next',
-      ),
-    );
-    notifyListeners();
-    await fetchInitial();
-  }
-
-  Future<void> applyAdminIdFilters({String? orderId, String? userId}) async {
-    if (_role != UserRole.admin) {
-      return;
-    }
-
     final normalizedOrderId = orderId?.trim();
-    final normalizedUserId = userId?.trim();
     _state = _state.copyWith(
       query: _state.query.copyWith(
-        idSearch: null,
         orderId: (normalizedOrderId == null || normalizedOrderId.isEmpty)
             ? null
             : normalizedOrderId,
-        userId: (normalizedUserId == null || normalizedUserId.isEmpty)
-            ? null
-            : normalizedUserId,
         cursor: null,
         direction: 'next',
       ),
@@ -158,10 +124,15 @@ class OrderListController extends ChangeNotifier {
     }
 
     final normalized = userId?.trim();
-    await applyAdminIdFilters(
-      orderId: _state.query.orderId,
-      userId: normalized,
+    _state = _state.copyWith(
+      query: _state.query.copyWith(
+        userId: (normalized == null || normalized.isEmpty) ? null : normalized,
+        cursor: null,
+        direction: 'next',
+      ),
     );
+    notifyListeners();
+    await fetchInitial();
   }
 
   Future<void> fetchNextPage() async {
@@ -233,30 +204,23 @@ class OrderListController extends ChangeNotifier {
     OrderQuery query,
   ) {
     final orderNeedle = query.orderId?.trim().toLowerCase() ?? '';
-    final idSearchNeedle = query.idSearch?.trim().toLowerCase() ?? '';
     final userNeedle = query.userId?.trim().toLowerCase() ?? '';
     final hasOrderFilter = orderNeedle.isNotEmpty;
-    final hasIdSearchFilter = idSearchNeedle.isNotEmpty;
     final hasUserFilter = userNeedle.isNotEmpty;
 
-    if (!hasIdSearchFilter && !hasOrderFilter && !hasUserFilter) {
+    if (!hasOrderFilter && !hasUserFilter) {
       return orders;
     }
 
     return orders.where((order) {
       final userId = order.userId?.toLowerCase() ?? '';
-      final matchesIdSearch =
-          !hasIdSearchFilter ||
-          order.orderId.toLowerCase().contains(idSearchNeedle) ||
-          order.orderNumber.toLowerCase().contains(idSearchNeedle) ||
-          userId.contains(idSearchNeedle);
       final matchesOrder =
           !hasOrderFilter ||
           order.orderId.toLowerCase().contains(orderNeedle) ||
           order.orderNumber.toLowerCase().contains(orderNeedle);
       final matchesUser = !hasUserFilter || userId.contains(userNeedle);
 
-      return matchesIdSearch && matchesOrder && matchesUser;
+      return matchesOrder && matchesUser;
     }).toList();
   }
 

@@ -122,6 +122,73 @@ Product _baseProduct({
 }
 
 void main() {
+  testWidgets('Phone layout keeps image height and uses compact controls', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final product = _baseProduct(
+      category: ProductCategory.food,
+      attributes: const ProductAttributes(
+        portions: <String>['regular', 'large'],
+        spicyLevels: <String>['no_spicy', 'mild', 'medium', 'hot'],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProductDetailPage(
+          productId: 'uuid',
+          getProductDetailUseCase: GetProductDetailUseCase(
+            _FakeProductRepository(product),
+          ),
+          addCartItemUseCase: AddCartItemUseCase(_FakeCartRepository()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const Key('product-detail-header'))).height,
+      56,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('product-detail-image'))).height,
+      340,
+    );
+
+    final productName = tester.widget<Text>(find.text('Americano'));
+    expect(productName.style?.fontSize, 32);
+    expect(tester.widget<Text>(find.text('MAKANAN')).style?.fontSize, 12);
+    expect(tester.widget<Text>(find.text('Rp 25.000')).style?.fontSize, 28);
+    expect(
+      tester
+          .widget<Text>(find.text('"Espresso dengan air panas"'))
+          .style
+          ?.fontSize,
+      16,
+    );
+    expect(tester.widget<Text>(find.text('PORTION')).style?.fontSize, 12);
+
+    await tester.ensureVisible(find.text('Regular'));
+    expect(
+      tester
+          .getSize(find.byKey(const Key('product-detail-pill-Regular')))
+          .height,
+      46,
+    );
+
+    expect(
+      tester
+          .getSize(find.byKey(const Key('product-detail-add-to-cart')))
+          .height,
+      54,
+    );
+  });
+
   testWidgets(
     'Coffee product: shows coffee attributes and toggles Ice on iced',
     (tester) async {

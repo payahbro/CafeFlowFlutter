@@ -56,6 +56,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           animation: _controller,
           builder: (context, _) {
             final product = _controller.product;
+            final isCompact = _isCompactLayout;
 
             if (_controller.isLoading) {
               return const Center(child: CircularProgressIndicator());
@@ -93,14 +94,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 top: Radius.circular(36),
                               ),
                             ),
-                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                            padding: EdgeInsets.fromLTRB(
+                              isCompact ? 14 : 18,
+                              isCompact ? 12 : 16,
+                              isCompact ? 14 : 18,
+                              isCompact ? 14 : 18,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildMetaHeader(product),
-                                const SizedBox(height: 14),
+                                SizedBox(height: isCompact ? 10 : 14),
                                 _buildDescription(product),
-                                const SizedBox(height: 18),
+                                SizedBox(height: isCompact ? 14 : 18),
                                 _buildAttributes(product),
                               ],
                             ),
@@ -123,6 +129,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Widget _buildImageHeader(Product product) {
     final rating = _normalizeRating(product.rating);
     return Stack(
+      key: const Key('product-detail-image'),
       children: [
         Image.network(
           product.imageUrl,
@@ -168,6 +175,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildMetaHeader(Product product) {
+    final isCompact = _isCompactLayout;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -177,14 +185,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             children: [
               Text(
                 product.category.label.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: isCompact ? 12 : 14,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.3,
                   color: Color(0xFF8C6B55),
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: isCompact ? 4 : 6),
               // Keep the name readable and avoid breaking mid-word.
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -197,8 +205,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         product.name,
                         maxLines: 1,
                         softWrap: false,
-                        style: const TextStyle(
-                          fontSize: 40,
+                        style: TextStyle(
+                          fontSize: isCompact ? 32 : 40,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF231815),
                           height: 1.05,
@@ -211,23 +219,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ],
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isCompact ? 8 : 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             CurrencyText(
               price: product.price,
-              style: const TextStyle(
-                fontSize: 34,
+              style: TextStyle(
+                fontSize: isCompact ? 28 : 34,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF231815),
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: isCompact ? 1 : 2),
             Text(
               'RUPIAH',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: isCompact ? 10 : 12,
                 fontWeight: FontWeight.w800,
                 color: Colors.grey.shade700,
                 letterSpacing: 1,
@@ -240,13 +248,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildDescription(Product product) {
+    final isCompact = _isCompactLayout;
     final desc = product.description.isEmpty
         ? 'Deskripsi produk belum tersedia'
         : product.description;
     return Text(
       '"$desc"',
-      style: const TextStyle(
-        fontSize: 18,
+      style: TextStyle(
+        fontSize: isCompact ? 16 : 18,
         color: Color(0xFF3D3531),
         height: 1.4,
         fontStyle: FontStyle.italic,
@@ -269,11 +278,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     final children = <Widget>[];
 
-    void addGap() => children.add(const SizedBox(height: 20));
+    void addGap() => children.add(SizedBox(height: _isCompactLayout ? 16 : 20));
 
     if (temps.isNotEmpty) {
       children.add(_sectionTitle('TEMPERATURE'));
-      children.add(const SizedBox(height: 10));
+      children.add(SizedBox(height: _isCompactLayout ? 8 : 10));
       children.add(
         _pillRow(
           options: temps,
@@ -286,14 +295,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     if (sizes.isNotEmpty) {
       children.add(_sectionTitle('SIZE SELECTION'));
-      children.add(const SizedBox(height: 10));
+      children.add(SizedBox(height: _isCompactLayout ? 8 : 10));
       children.add(
         Row(
           children: sizes.map((size) {
             final isActive = size == _controller.selectedSize;
             return Expanded(
               child: Padding(
-                padding: EdgeInsets.only(right: size == sizes.last ? 0 : 12),
+                padding: EdgeInsets.only(
+                  right: size == sizes.last ? 0 : (_isCompactLayout ? 8 : 12),
+                ),
                 child: _sizeCard(
                   label: size,
                   isActive: isActive,
@@ -323,7 +334,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   onChanged: _controller.selectSugarLevel,
                 ),
               ),
-            if (hasSugar && hasIce) const SizedBox(width: 12),
+            if (hasSugar && hasIce) SizedBox(width: _isCompactLayout ? 8 : 12),
             if (hasIce)
               Expanded(
                 child: _verticalChoiceList(
@@ -355,11 +366,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     final children = <Widget>[];
 
-    void addGap() => children.add(const SizedBox(height: 20));
+    void addGap() => children.add(SizedBox(height: _isCompactLayout ? 16 : 20));
 
     if (portions.isNotEmpty) {
       children.add(_sectionTitle('PORTION'));
-      children.add(const SizedBox(height: 10));
+      children.add(SizedBox(height: _isCompactLayout ? 8 : 10));
       children.add(
         _pillRow(
           options: portions,
@@ -372,11 +383,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     if (spicy.isNotEmpty) {
       children.add(_sectionTitle('SPICY LEVELS'));
-      children.add(const SizedBox(height: 10));
+      children.add(SizedBox(height: _isCompactLayout ? 8 : 10));
       children.add(
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: _isCompactLayout ? 8 : 10,
+          runSpacing: _isCompactLayout ? 8 : 10,
           children: spicy.map((level) {
             final isActive = level == _controller.selectedSpicyLevel;
             return _chipButton(
@@ -400,10 +411,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _sectionTitle(String text) {
+    final isCompact = _isCompactLayout;
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 14,
+      style: TextStyle(
+        fontSize: isCompact ? 12 : 14,
         fontWeight: FontWeight.w800,
         letterSpacing: 1.6,
         color: Color(0xFF26211F),
@@ -418,6 +430,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }) {
     if (options.isEmpty) return const SizedBox.shrink();
 
+    final gap = _isCompactLayout ? 8.0 : 12.0;
     final children = options.map((option) {
       final isActive = option == selected;
       return Expanded(
@@ -433,7 +446,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       children: children.expand((w) sync* {
         yield w;
         if (w != children.last) {
-          yield const SizedBox(width: 12);
+          yield SizedBox(width: gap);
         }
       }).toList(),
     );
@@ -444,12 +457,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isCompact = _isCompactLayout;
     final activeColor = const Color(0xFF6A3A16);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(26),
       child: Container(
-        height: 54,
+        key: Key('product-detail-pill-$label'),
+        height: isCompact ? 46 : 54,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive ? activeColor : const Color(0xFFF2EEEB),
@@ -462,7 +477,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           label,
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 18,
+            fontSize: isCompact ? 15 : 18,
             color: isActive ? Colors.white : const Color(0xFF231815),
           ),
         ),
@@ -475,11 +490,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isCompact = _isCompactLayout;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 12 : 14,
+          vertical: isCompact ? 10 : 12,
+        ),
         decoration: BoxDecoration(
           color: isActive ? const Color(0x1AD88A16) : const Color(0xFFF2EEEB),
           borderRadius: BorderRadius.circular(14),
@@ -491,6 +510,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           label,
           style: TextStyle(
             fontWeight: FontWeight.w700,
+            fontSize: isCompact ? 13 : 14,
             color: isActive ? const Color(0xFF6A3A16) : const Color(0xFF231815),
           ),
         ),
@@ -503,6 +523,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isCompact = _isCompactLayout;
     final borderColor = isActive
         ? const Color(0xFF6A3A16)
         : const Color(0xFFE0D7D2);
@@ -514,7 +535,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: EdgeInsets.symmetric(vertical: isCompact ? 10 : 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -522,11 +543,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: Column(
           children: [
-            Icon(_iconForSize(label), color: fgColor, size: 30),
-            const SizedBox(height: 8),
+            Icon(
+              _iconForSize(label),
+              color: fgColor,
+              size: isCompact ? 26 : 30,
+            ),
+            SizedBox(height: isCompact ? 6 : 8),
             Text(
               _formatOptionLabel(label),
-              style: TextStyle(color: fgColor, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                color: fgColor,
+                fontWeight: FontWeight.w800,
+                fontSize: isCompact ? 13 : 14,
+              ),
             ),
           ],
         ),
@@ -556,15 +585,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }) {
     if (options.isEmpty) return const SizedBox.shrink();
 
+    final isCompact = _isCompactLayout;
     final list = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _sectionTitle(title),
-        const SizedBox(height: 10),
+        SizedBox(height: isCompact ? 8 : 10),
         ...options.map((option) {
           final isActive = option == selected;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: EdgeInsets.only(bottom: isCompact ? 8 : 10),
             child: _listButton(
               label: _formatOptionLabel(option),
               isActive: isActive,
@@ -585,11 +615,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isCompact = _isCompactLayout;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        height: 46,
+        height: isCompact ? 42 : 46,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive ? const Color(0x1AD88A16) : const Color(0xFFF2EEEB),
@@ -602,6 +633,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           label,
           style: TextStyle(
             fontWeight: FontWeight.w800,
+            fontSize: isCompact ? 13 : 14,
             color: isActive ? const Color(0xFF6A3A16) : const Color(0xFF231815),
           ),
         ),
@@ -708,8 +740,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final isCompact = _isCompactLayout;
     return Container(
-      height: 66,
+      key: const Key('product-detail-header'),
+      height: isCompact ? 56 : 66,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -720,16 +754,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: isCompact ? 26 : 30,
+            ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'PESANAN',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 30,
+                fontSize: isCompact ? 24 : 30,
                 letterSpacing: 1,
               ),
             ),
@@ -742,10 +780,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Widget _buildBottomBar(Product product) {
     final canBeOrdered = product.status.canBeOrdered;
+    final isCompact = _isCompactLayout;
 
     return Container(
       color: const Color(0xFFF7F3EF),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+      padding: EdgeInsets.fromLTRB(
+        isCompact ? 10 : 12,
+        isCompact ? 10 : 12,
+        isCompact ? 10 : 12,
+        isCompact ? 10 : 14,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -771,34 +815,42 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: _quantityPill(),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: isCompact ? 10 : 14),
               Expanded(
                 child: ElevatedButton(
+                  key: const Key('product-detail-add-to-cart'),
                   onPressed: canBeOrdered && !_isAddingToCart
                       ? () => _addToCart(product)
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6A3A16),
                     disabledBackgroundColor: const Color(0xFFB7AAA2),
-                    minimumSize: const Size.fromHeight(62),
+                    minimumSize: Size.fromHeight(isCompact ? 54 : 62),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                      SizedBox(width: 10),
-                      Text(
-                        'Add to Cart',
-                        style: TextStyle(
-                          fontSize: 20,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.shopping_cart_outlined,
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                          size: isCompact ? 20 : 24,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: isCompact ? 7 : 10),
+                        Text(
+                          'Add to Cart',
+                          style: TextStyle(
+                            fontSize: isCompact ? 16 : 20,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -846,8 +898,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _quantityPill() {
+    final isCompact = _isCompactLayout;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 6 : 10,
+        vertical: isCompact ? 6 : 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -858,11 +914,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         children: [
           _qtyIconButton(icon: Icons.remove, onTap: _controller.decrement),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? 8 : 14),
             child: Text(
               '${_controller.quantity}',
-              style: const TextStyle(
-                fontSize: 20,
+              style: TextStyle(
+                fontSize: isCompact ? 18 : 20,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF231815),
               ),
@@ -875,12 +931,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Widget _qtyIconButton({required IconData icon, required VoidCallback onTap}) {
+    final size = _isCompactLayout ? 32.0 : 36.0;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        width: 36,
-        height: 36,
+        width: size,
+        height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: const Color(0xFFF2EEEB),
@@ -890,4 +947,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
     );
   }
+
+  bool get _isCompactLayout => MediaQuery.sizeOf(context).width < 600;
 }
